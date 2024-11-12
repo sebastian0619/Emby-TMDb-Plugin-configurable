@@ -419,24 +419,30 @@
     ]
   },
   "packageFolders": {
-    "/Users/sebastian/.nuget/packages/": {}
+    "C:\\Users\\Sebas\\.nuget\\packages\\": {},
+    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
   },
   "project": {
     "version": "2.0.0",
     "restore": {
-      "projectUniqueName": "/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/MovieDb.csproj",
+      "projectUniqueName": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
       "projectName": "MovieDb",
-      "projectPath": "/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/MovieDb.csproj",
-      "packagesPath": "/Users/sebastian/.nuget/packages/",
-      "outputPath": "/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/",
+      "projectPath": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
+      "packagesPath": "C:\\Users\\Sebas\\.nuget\\packages\\",
+      "outputPath": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+      ],
       "configFilePaths": [
-        "/Users/sebastian/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Sebas\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "netstandard2.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -486,7 +492,7 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.403/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.403\\RuntimeIdentifierGraph.json"
       }
     }
   }

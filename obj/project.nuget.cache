@@ -1,16 +1,16 @@
 {
   "version": 2,
-  "dgSpecHash": "MUGIg7JTcvA=",
+  "dgSpecHash": "gYPDeFUp4Pc=",
   "success": true,
-  "projectFilePath": "/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/MovieDb.csproj",
+  "projectFilePath": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
   "expectedPackageFiles": [
-    "/Users/sebastian/.nuget/packages/mediabrowser.common/4.8.10/mediabrowser.common.4.8.10.nupkg.sha512",
-    "/Users/sebastian/.nuget/packages/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg.sha512",
-    "/Users/sebastian/.nuget/packages/netstandard.library/2.0.3/netstandard.library.2.0.3.nupkg.sha512",
-    "/Users/sebastian/.nuget/packages/system.buffers/4.5.1/system.buffers.4.5.1.nupkg.sha512",
-    "/Users/sebastian/.nuget/packages/system.memory/4.5.5/system.memory.4.5.5.nupkg.sha512",
-    "/Users/sebastian/.nuget/packages/system.numerics.vectors/4.4.0/system.numerics.vectors.4.4.0.nupkg.sha512",
-    "/Users/sebastian/.nuget/packages/system.runtime.compilerservices.unsafe/4.5.3/system.runtime.compilerservices.unsafe.4.5.3.nupkg.sha512"
+    "C:\\Users\\Sebas\\.nuget\\packages\\mediabrowser.common\\4.8.10\\mediabrowser.common.4.8.10.nupkg.sha512",
+    "C:\\Users\\Sebas\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\Sebas\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512",
+    "C:\\Users\\Sebas\\.nuget\\packages\\system.buffers\\4.5.1\\system.buffers.4.5.1.nupkg.sha512",
+    "C:\\Users\\Sebas\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
+    "C:\\Users\\Sebas\\.nuget\\packages\\system.numerics.vectors\\4.4.0\\system.numerics.vectors.4.4.0.nupkg.sha512",
+    "C:\\Users\\Sebas\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\4.5.3\\system.runtime.compilerservices.unsafe.4.5.3.nupkg.sha512"
   ],
   "logs": []
 }
