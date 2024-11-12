@@ -11,13 +11,19 @@ C:/Users/Sebas/Documents/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.Cor
 /Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.Up2Date
 /Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.dll
 /Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.pdb
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\bin\Debug\netstandard2.0\MovieDb.deps.json
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\bin\Debug\netstandard2.0\MovieDb.dll
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\bin\Debug\netstandard2.0\MovieDb.pdb
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\bin\Debug\netstandard2.0\MediaBrowser.Controller.dll
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\obj\Debug\netstandard2.0\MovieDb.csproj.AssemblyReference.cache
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\obj\Debug\netstandard2.0\MovieDb.GeneratedMSBuildEditorConfig.editorconfig
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\obj\Debug\netstandard2.0\MovieDb.csproj.CoreCompileInputs.cache
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\obj\Debug\netstandard2.0\MovieDb.csproj.Up2Date
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\obj\Debug\netstandard2.0\MovieDb.dll
-\\KingsCross\home\Onedrive\0.Micellaneous\cross-process\测\MovieDb\obj\Debug\netstandard2.0\MovieDb.pdb
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.deps.json
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.dll
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.pdb
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MediaBrowser.Controller.dll
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.AssemblyReference.cache
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.GeneratedMSBuildEditorConfig.editorconfig
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.CoreCompileInputs.cache
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.Up2Date
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.dll
+//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.pdb
+/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.csproj.AssemblyReference.cache
+/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.GeneratedMSBuildEditorConfig.editorconfig
+/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.csproj.CoreCompileInputs.cache
+/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.sourcelink.json
+/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.dll
+/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.pdb

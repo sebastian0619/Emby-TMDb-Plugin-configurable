@@ -228,44 +228,35 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 		Current = this;
 	}
 
-	public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken)
+	public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(ItemLookupInfo searchInfo, CancellationToken cancellationToken)
 	{
-		return GetMovieSearchResults((ItemLookupInfo)(object)searchInfo, cancellationToken);
-	}
+		// 获取支持的语言列表
+		var languages = await GetTmdbLanguages(cancellationToken)
+			.ConfigureAwait(false);
+		
+		// 获取元数据语言
+		string[] metadataLanguages = GetMovieDbMetadataLanguages(searchInfo, languages);
 
-	public async Task<IEnumerable<RemoteSearchResult>> GetMovieSearchResults(ItemLookupInfo searchInfo, CancellationToken cancellationToken)
-	{
-		string tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)searchInfo, (MetadataProviders)3);
-		TmdbSettingsResult tmdbSettings = null;
-		if (!string.IsNullOrEmpty(tmdbId))
+		// 根据类型使用不同的搜索实现
+		var movieDbSearch = new MovieDbSearch(Logger, JsonSerializer, LibraryManager);
+		
+		if (searchInfo is SeriesInfo seriesInfo)
 		{
-			MetadataResult<Movie> val = await this.GetItemMetadata<Movie>(searchInfo, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-			if (!((BaseMetadataResult)val).HasMetadata)
-			{
-				return new List<RemoteSearchResult>();
-			}
-			RemoteSearchResult result = ((BaseMetadataResult)val).ToRemoteSearchResult(base.Name);
-			List<TmdbImage> images = ((await EnsureMovieInfo(tmdbId, null, cancellationToken).ConfigureAwait(continueOnCapturedContext: false))?.images ?? new TmdbImages()).posters ?? new List<TmdbImage>();
-			string imageUrl = (await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).images.GetImageUrl("original");
-			result.ImageUrl = ((images.Count == 0) ? null : (imageUrl + images[0].file_path));
-			return (IEnumerable<RemoteSearchResult>)(object)new RemoteSearchResult[1] { result };
+			return await movieDbSearch.GetSearchResults(
+				seriesInfo,
+				metadataLanguages,
+				cancellationToken).ConfigureAwait(false);
 		}
-		string providerId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)searchInfo, (MetadataProviders)2);
-		if (!string.IsNullOrEmpty(providerId))
+		else if (searchInfo is MovieInfo movieInfo)
 		{
-			MovieDbSearch movieDbSearch = new MovieDbSearch(Logger, JsonSerializer, LibraryManager);
-			RemoteSearchResult val3 = await movieDbSearch.FindMovieByExternalId(providerId, "imdb_id", MetadataProviders.Imdb.ToString(), cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-			if (val3 != null)
-			{
-				return (IEnumerable<RemoteSearchResult>)(object)new RemoteSearchResult[1] { val3 };
-			}
+			return await movieDbSearch.GetSearchResults(
+				movieInfo,
+				metadataLanguages,
+				cancellationToken).ConfigureAwait(false);
 		}
-		if (tmdbSettings == null)
-		{
-			tmdbSettings = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-		}
-		string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages(searchInfo, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
-		return await new MovieDbSearch(Logger, JsonSerializer, LibraryManager).GetMovieSearchResults(searchInfo, movieDbMetadataLanguages, tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+		
+		// 不支持的类型返回空结果
+		return new List<RemoteSearchResult>();
 	}
 
 	public Task<MetadataResult<Movie>> GetMetadata(MovieInfo info, CancellationToken cancellationToken)
@@ -390,5 +381,26 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 		var config = GetConfiguration();
 		var baseUrl = config.TmdbApiBaseUrl.TrimEnd('/');
 		return $"{baseUrl}/{path}?api_key={config.ApiKey}";
+	}
+
+	// 修改 GetMovieDbMetadataLanguages 方法使其更通用
+	protected string[] GetMovieDbMetadataLanguages(ItemLookupInfo info, List<string> languages)
+	{
+		if (languages == null || languages.Count == 0)
+		{
+			return new string[] { "en" };  // 默认使用英语
+		}
+
+		var configLanguages = ConfigurationManager.Configuration.PreferredMetadataLanguage;
+		
+		// 如果配置的语言在支持的语言列表中，优先使用它
+		if (!string.IsNullOrEmpty(configLanguages) && 
+			languages.Contains(configLanguages, StringComparer.OrdinalIgnoreCase))
+		{
+			return new string[] { configLanguages };
+		}
+
+		// 否则使用第一个支持的语言
+		return new string[] { languages[0] };
 	}
 }

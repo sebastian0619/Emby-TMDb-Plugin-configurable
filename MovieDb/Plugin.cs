@@ -28,6 +28,11 @@ namespace MovieDb
         public static string StaticName => "TheMovieDb";
 
         /// <summary>
+        /// 插件配置
+        /// </summary>
+        public PluginOptions Configuration { get; set; }
+
+        /// <summary>
         /// 构造函数
         /// </summary>
         public Plugin(IApplicationHost applicationHost, ILogManager logManager)
@@ -36,6 +41,9 @@ namespace MovieDb
             Instance = this;
             _logger = logManager.GetLogger(Name);
             _logger.Info($"TMDB Plugin ({Name}) 正在初始化");
+            
+            // 初始化配置
+            Configuration = new PluginOptions();
         }
 
         /// <summary>
@@ -97,9 +105,9 @@ namespace MovieDb
                 {
                     options = new PluginOptions
                     {
-                        TmdbApiBaseUrl = "https://tmdb.kingscross.online:8333",
-                        TmdbImageBaseUrl = "https://image.kingscross.online:8333/t/p/",
-                        ApiKey = "59ef6336a19540cd1e254cae0565906e"
+                        TmdbApiBaseUrl = "https://api.themoviedb.org",
+                        TmdbImageBaseUrl = "https://image.tmdb.org/t/p/",
+                        ApiKey = ""
                     };
                 }
                 return base.OnBeforeShowUI(options);

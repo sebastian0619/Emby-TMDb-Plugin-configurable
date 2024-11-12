@@ -42,16 +42,20 @@ public class MovieDbPersonImageProvider : MovieDbProviderBase, IRemoteImageProvi
 	public async Task<IEnumerable<RemoteImageInfo>> GetImages(RemoteImageFetchOptions options, CancellationToken cancellationToken)
 	{
 		BaseItem item = options.Item;
-		_ = options.LibraryOptions;
 		IDirectoryService directoryService = options.DirectoryService;
 		string providerId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(Person)item, (MetadataProviders)3);
+		
 		if (!string.IsNullOrEmpty(providerId))
 		{
-			MovieDbPersonProvider.Images images = (await MovieDbPersonProvider.Current.EnsurePersonInfo(providerId, null, directoryService, cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).images ?? new MovieDbPersonProvider.Images();
-			TmdbSettingsResult tmdbSettingsResult = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-			string imageUrl = tmdbSettingsResult.images.GetImageUrl("original");
-			return GetImages(images, tmdbSettingsResult, imageUrl);
+			var images = (await MovieDbPersonProvider.Current.EnsurePersonInfo(providerId, null, directoryService, cancellationToken)
+				.ConfigureAwait(continueOnCapturedContext: false))?.images ?? new MovieDbPersonProvider.Images();
+			
+			var config = Plugin.Instance.Configuration;
+			string imageUrl = config.GetImageUrl("original");
+			
+			return GetImages(images, imageUrl);
 		}
+		
 		return new List<RemoteImageInfo>();
 	}
 
@@ -60,24 +64,26 @@ public class MovieDbPersonImageProvider : MovieDbProviderBase, IRemoteImageProvi
 		throw new NotImplementedException();
 	}
 
-	private IEnumerable<RemoteImageInfo> GetImages(MovieDbPersonProvider.Images images, TmdbSettingsResult tmdbSettings, string baseImageUrl)
+	private IEnumerable<RemoteImageInfo> GetImages(MovieDbPersonProvider.Images images, string baseImageUrl)
 	{
 		List<RemoteImageInfo> list = new List<RemoteImageInfo>();
+		
 		if (images.profiles != null)
 		{
-			list.AddRange(((IEnumerable<TmdbImage>)images.profiles).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
+			list.AddRange(images.profiles.Select(i => new RemoteImageInfo
 			{
 				Url = baseImageUrl + i.file_path,
-				ThumbnailUrl = tmdbSettings.images.GetProfileThumbnailImageUrl(i.file_path),
+				ThumbnailUrl = Plugin.Instance.Configuration.GetImageUrl("w500") + i.file_path,
 				CommunityRating = i.vote_average,
 				VoteCount = i.vote_count,
 				Width = i.width,
 				Height = i.height,
-				ProviderName = base.Name,
-				Type = (ImageType)0,
-				RatingType = (RatingType)0
-			})));
+				ProviderName = Name,
+				Type = ImageType.Primary,
+				RatingType = RatingType.Score
+			}));
 		}
+		
 		return list;
 	}
 }

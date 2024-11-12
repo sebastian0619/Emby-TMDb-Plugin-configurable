@@ -134,9 +134,30 @@ public class MovieDbSearch
 		_libraryManager = libraryManager;
 	}
 
-	public Task<List<RemoteSearchResult>> GetSearchResults(SeriesInfo idInfo, string[] tmdbLanguages, TmdbSettingsResult tmdbSettings, CancellationToken cancellationToken)
+	public async Task<List<RemoteSearchResult>> GetSearchResults(
+		SeriesInfo idInfo, 
+		string[] tmdbLanguages, 
+		CancellationToken cancellationToken)
 	{
-		return GetSearchResults((ItemLookupInfo)(object)idInfo, tmdbLanguages, "tv", tmdbSettings, cancellationToken);
+		var name = idInfo.Name;
+		var year = idInfo.Year;
+		
+		if (string.IsNullOrEmpty(name))
+		{
+			return new List<RemoteSearchResult>();
+		}
+
+		var config = Plugin.Instance.Configuration;
+		string imageUrl = config.GetImageUrl("original");
+
+		return await GetSearchResultsTv(
+			name,
+			year,
+			tmdbLanguages?.FirstOrDefault(),
+			idInfo.EnableAdultMetadata,
+			imageUrl,
+			cancellationToken)
+			.ConfigureAwait(false);
 	}
 
 	public Task<List<RemoteSearchResult>> GetMovieSearchResults(ItemLookupInfo idInfo, string[] tmdbLanguages, TmdbSettingsResult tmdbSettings, CancellationToken cancellationToken)
@@ -269,7 +290,7 @@ public class MovieDbSearch
 				TmdbMovieSearchResult tv = externalIdLookupResult.movie_results.FirstOrDefault();
 				if (tv != null)
 				{
-					string imageUrl = (await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).images.GetImageUrl("original");
+					string imageUrl = config.GetImageUrl("original");
 					return ParseMovieSearchResult(tv, imageUrl);
 				}
 			}

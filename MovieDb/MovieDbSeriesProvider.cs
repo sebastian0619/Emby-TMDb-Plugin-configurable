@@ -156,7 +156,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 	private const string FindPath = "3/find/{0}";
 	private const string AppendToResponse = "alternative_titles,reviews,credits,images,keywords,external_ids,videos,content_ratings,episode_groups";
 
-	internal static MovieDbSeriesProvider Current { get; private set; }
+	public static MovieDbSeriesProvider Current { get; private set; }
 
 	public MetadataFeatures[] Features => (MetadataFeatures[])(object)new MetadataFeatures[1] { (MetadataFeatures)2 };
 
@@ -171,7 +171,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 	public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(SeriesInfo searchInfo, CancellationToken cancellationToken)
 	{
 		string tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)searchInfo, (MetadataProviders)3);
-		TmdbSettingsResult tmdbSettings = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+		
 		if (!string.IsNullOrEmpty(tmdbId))
 		{
 			MetadataResult<Series> val = await GetMetadata(searchInfo, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
@@ -181,32 +181,41 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 			}
 			RemoteSearchResult result = ((BaseMetadataResult)val).ToRemoteSearchResult(base.Name);
 			List<TmdbImage> list = ((await EnsureSeriesInfo(tmdbId, null, cancellationToken).ConfigureAwait(continueOnCapturedContext: false))?.images ?? new TmdbImages()).posters ?? new List<TmdbImage>();
-			string imageUrl = tmdbSettings.images.GetImageUrl("original");
+			var config = Plugin.Instance.Configuration;
+			string imageUrl = config.GetImageUrl("original");
 			result.ImageUrl = list.Count == 0 ? null : imageUrl + list[0].file_path;
 			return new RemoteSearchResult[] { result };
 		}
+
 		string providerId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)searchInfo, (MetadataProviders)2);
 		if (!string.IsNullOrEmpty(providerId))
 		{
-			MovieDbSeriesProvider movieDbSeriesProvider = this;
-			RemoteSearchResult val3 = await movieDbSeriesProvider.FindByExternalId(providerId, "imdb_id", MetadataProviders.Imdb.ToString(), tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+			RemoteSearchResult val3 = await FindByExternalId(providerId, "imdb_id", MetadataProviders.Imdb.ToString(), cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 			if (val3 != null)
 			{
-				return (IEnumerable<RemoteSearchResult>)(object)new RemoteSearchResult[1] { val3 };
+				return new RemoteSearchResult[] { val3 };
 			}
 		}
+
 		string providerId2 = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)searchInfo, (MetadataProviders)4);
 		if (!string.IsNullOrEmpty(providerId2))
 		{
-			MovieDbSeriesProvider movieDbSeriesProvider2 = this;
-			RemoteSearchResult val4 = await movieDbSeriesProvider2.FindByExternalId(providerId2, "tvdb_id", MetadataProviders.Tvdb.ToString(), tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+			RemoteSearchResult val4 = await FindByExternalId(providerId2, "tvdb_id", MetadataProviders.Tvdb.ToString(), cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 			if (val4 != null)
 			{
-				return (IEnumerable<RemoteSearchResult>)(object)new RemoteSearchResult[1] { val4 };
+				return new RemoteSearchResult[] { val4 };
 			}
 		}
+
 		string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages((ItemLookupInfo)(object)searchInfo, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
-		return await FilterSearchResults(await new MovieDbSearch(Logger, JsonSerializer, LibraryManager).GetSearchResults(searchInfo, movieDbMetadataLanguages, tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false), searchInfo, foundByName: true, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+		return await FilterSearchResults(
+			await new MovieDbSearch(Logger, JsonSerializer, LibraryManager)
+				.GetSearchResults(searchInfo, movieDbMetadataLanguages, cancellationToken)
+				.ConfigureAwait(continueOnCapturedContext: false),
+			searchInfo,
+			foundByName: true,
+			cancellationToken
+		).ConfigureAwait(continueOnCapturedContext: false);
 	}
 
 	private async Task<List<RemoteSearchResult>> FilterSearchResults(List<RemoteSearchResult> results, SeriesInfo searchInfo, bool foundByName, CancellationToken cancellationToken)
@@ -283,7 +292,6 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 	{
 		MetadataResult<Series> result = new MetadataResult<Series>();
 		((BaseMetadataResult)result).QueriedById = true;
-		TmdbSettingsResult tmdbSettings = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 		string tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)info, (MetadataProviders)3);
 		if (string.IsNullOrEmpty(tmdbId))
 		{
@@ -291,7 +299,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 			if (!string.IsNullOrEmpty(providerId))
 			{
 				MovieDbSeriesProvider movieDbSeriesProvider = this;
-				RemoteSearchResult val2 = await movieDbSeriesProvider.FindByExternalId(providerId, "imdb_id", MetadataProviders.Imdb.ToString(), tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+				RemoteSearchResult val2 = await movieDbSeriesProvider.FindByExternalId(providerId, "imdb_id", MetadataProviders.Imdb.ToString(), cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 				if (val2 != null)
 				{
 					tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)val2, (MetadataProviders)3);
@@ -304,7 +312,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 			if (!string.IsNullOrEmpty(providerId2))
 			{
 				MovieDbSeriesProvider movieDbSeriesProvider2 = this;
-				RemoteSearchResult val3 = await movieDbSeriesProvider2.FindByExternalId(providerId2, "tvdb_id", MetadataProviders.Tvdb.ToString(), tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+				RemoteSearchResult val3 = await movieDbSeriesProvider2.FindByExternalId(providerId2, "tvdb_id", MetadataProviders.Tvdb.ToString(), cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 				if (val3 != null)
 				{
 					tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)val3, (MetadataProviders)3);
@@ -315,7 +323,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		if (string.IsNullOrEmpty(tmdbId))
 		{
 			((BaseMetadataResult)result).QueriedById = false;
-			RemoteSearchResult val4 = (await new MovieDbSearch(Logger, JsonSerializer, LibraryManager).GetSearchResults(info, metadataLanguages, tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).FirstOrDefault();
+			RemoteSearchResult val4 = (await new MovieDbSearch(Logger, JsonSerializer, LibraryManager).GetSearchResults(info, metadataLanguages, cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).FirstOrDefault();
 			if (val4 != null)
 			{
 				tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)val4, (MetadataProviders)3);
@@ -336,7 +344,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 					{
 						result.Item = new Series();
 					}
-					ImportData(result, seriesRootObject, ((ItemLookupInfo)info).MetadataCountryCode, tmdbSettings, isFirstLanguage);
+					ImportData(result, seriesRootObject, ((ItemLookupInfo)info).MetadataCountryCode, cancellationToken, isFirstLanguage);
 					isFirstLanguage = false;
 					if (IsComplete(result.Item))
 					{
@@ -365,7 +373,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		return true;
 	}
 
-	private void ImportData(MetadataResult<Series> seriesResult, SeriesRootObject seriesInfo, string preferredCountryCode, TmdbSettingsResult settings, bool isFirstLanguage)
+	private void ImportData(MetadataResult<Series> seriesResult, SeriesRootObject seriesInfo, string preferredCountryCode, CancellationToken cancellationToken, bool isFirstLanguage)
 	{
 		//IL_0437: Unknown result type (might be due to invalid IL or missing references)
 		//IL_043c: Unknown result type (might be due to invalid IL or missing references)
@@ -456,7 +464,8 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 			((BaseItem)item).OfficialRating = contentRating3.GetRating();
 		}
 		((BaseMetadataResult)seriesResult).ResetPeople();
-		string imageUrl = settings.images.GetImageUrl("original");
+		var config = Plugin.Instance.Configuration;
+		string imageUrl = config.GetImageUrl("original");
 		if (seriesInfo.credits == null || seriesInfo.credits.cast == null)
 		{
 			return;
@@ -593,7 +602,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		return Path.Combine(GetSeriesDataPath((IApplicationPaths)(object)ConfigurationManager.ApplicationPaths, tmdbId), text);
 	}
 
-	private async Task<RemoteSearchResult> FindByExternalId(string id, string externalSource, string providerIdKey, TmdbSettingsResult tmdbSettings, CancellationToken cancellationToken)
+	private async Task<RemoteSearchResult> FindByExternalId(string id, string externalSource, string providerIdKey, CancellationToken cancellationToken)
 	{
 		var config = GetConfiguration();
 		string url = GetApiUrl(string.Format(FindPath, id)) + $"&external_source={externalSource}";
@@ -615,7 +624,7 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 					var tvResult = externalIdLookupResult.tv_results.FirstOrDefault();
 					if (tvResult != null)
 					{
-						string imageUrl = tmdbSettings.images.GetImageUrl("original");
+						string imageUrl = config.GetImageUrl("original");
 						var obj = MovieDbSearch.ToRemoteSearchResult(tvResult, imageUrl);
 						ProviderIdsExtensions.SetProviderId((IHasProviderIds)obj, providerIdKey, id);
 						return obj;
