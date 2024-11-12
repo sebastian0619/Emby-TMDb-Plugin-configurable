@@ -5,11 +5,9 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Configuration;
-using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Providers;
@@ -76,9 +74,10 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 	}
 
 	private const string TvSeasonPath = "3/tv/{0}/season/{1}";
+
 	private const string AppendToResponse = "images,keywords,external_ids,credits,videos";
 
-	public MetadataFeatures[] Features => (MetadataFeatures[])(object)new MetadataFeatures[1] { (MetadataFeatures)2 };
+	public MetadataFeatures[] Features => new MetadataFeatures[1] { MetadataFeatures.Adult };
 
 	public MovieDbSeasonProvider(IJsonSerializer jsonSerializer, IHttpClient httpClient, IFileSystem fileSystem, IServerConfigurationManager configurationManager, ILogManager logManager, ILocalizationManager localization, IServerApplicationHost appHost, ILibraryManager libraryManager)
 		: base(httpClient, configurationManager, jsonSerializer, fileSystem, localization, logManager, appHost, libraryManager)
@@ -90,26 +89,28 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		SeasonInfo info = options.SearchInfo;
 		MetadataResult<Season> result = new MetadataResult<Season>();
 		ProviderIdDictionary seriesProviderIds = info.SeriesProviderIds;
-		seriesProviderIds.TryGetValue(MetadataProviders.Tmdb.ToString(), out string seriesTmdbId);
-		int? seasonNumber = ((ItemLookupInfo)info).IndexNumber;
+		seriesProviderIds.TryGetValue(MetadataProviders.Tmdb.ToString(), out var seriesTmdbId);
+		int? seasonNumber = info.IndexNumber;
 		if (!string.IsNullOrWhiteSpace(seriesTmdbId) && seasonNumber.HasValue)
 		{
-			string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages((ItemLookupInfo)(object)info, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
+			ItemLookupInfo searchInfo = info;
+			string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages(searchInfo, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
 			try
 			{
 				bool isFirstLanguage = true;
 				string[] array = movieDbMetadataLanguages;
-				foreach (string language in array)
+				string[] array2 = array;
+				for (int i = 0; i < array2.Length; i++)
 				{
-					SeasonRootObject seasonRootObject = await EnsureSeasonInfo(seriesTmdbId, seasonNumber.Value, language, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+					SeasonRootObject seasonRootObject = await EnsureSeasonInfo(language: array2[i], tmdbId: seriesTmdbId, seasonNumber: seasonNumber.Value, cancellationToken: cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 					if (seasonRootObject != null)
 					{
-						((BaseMetadataResult)result).HasMetadata = true;
+						result.HasMetadata = true;
 						if (result.Item == null)
 						{
 							result.Item = new Season();
 						}
-						ImportData(result.Item, seasonRootObject, ((ItemLookupInfo)info).Name, seasonNumber.Value, isFirstLanguage);
+						ImportData(result.Item, seasonRootObject, info.Name, seasonNumber.Value, isFirstLanguage);
 						isFirstLanguage = false;
 						if (IsComplete(result.Item))
 						{
@@ -118,8 +119,9 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 					}
 				}
 			}
-			catch (HttpException val2)
+			catch (HttpException ex)
 			{
+				HttpException val2 = ex;
 				HttpException val3 = val2;
 				if (val3.StatusCode.HasValue && val3.StatusCode.Value == HttpStatusCode.NotFound)
 				{
@@ -133,11 +135,11 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	private bool IsComplete(Season item)
 	{
-		if (string.IsNullOrEmpty(((BaseItem)item).Name))
+		if (string.IsNullOrEmpty(item.Name))
 		{
 			return false;
 		}
-		if (string.IsNullOrEmpty(((BaseItem)item).Overview))
+		if (string.IsNullOrEmpty(item.Overview))
 		{
 			return false;
 		}
@@ -146,20 +148,20 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	private void ImportData(Season item, SeasonRootObject seasonInfo, string name, int seasonNumber, bool isFirstLanguage)
 	{
-		if (string.IsNullOrEmpty(((BaseItem)item).Name))
+		if (string.IsNullOrEmpty(item.Name))
 		{
-			((BaseItem)item).Name = seasonInfo.name;
+			item.Name = seasonInfo.name;
 		}
-		if (string.IsNullOrEmpty(((BaseItem)item).Overview))
+		if (string.IsNullOrEmpty(item.Overview))
 		{
-			((BaseItem)item).Overview = seasonInfo.overview;
+			item.Overview = seasonInfo.overview;
 		}
 		if (isFirstLanguage)
 		{
-			((BaseItem)item).IndexNumber = seasonNumber;
+			item.IndexNumber = seasonNumber;
 			if (seasonInfo.external_ids.tvdb_id > 0)
 			{
-				ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)item, (MetadataProviders)4, seasonInfo.external_ids.tvdb_id.Value.ToString(CultureInfo.InvariantCulture));
+				item.SetProviderId(MetadataProviders.Tvdb, seasonInfo.external_ids.tvdb_id.Value.ToString(CultureInfo.InvariantCulture));
 			}
 			TmdbCredits credits = seasonInfo.credits;
 			if (credits != null)
@@ -167,8 +169,8 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 				_ = credits.cast;
 				_ = credits.crew;
 			}
-			((BaseItem)item).PremiereDate = seasonInfo.air_date;
-			((BaseItem)item).ProductionYear = ((BaseItem)item).PremiereDate.Value.Year;
+			item.PremiereDate = seasonInfo.air_date;
+			item.ProductionYear = item.PremiereDate.Value.Year;
 		}
 	}
 
@@ -199,7 +201,7 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		{
 			seasonRootObject = await FetchMainResult(tmdbId, seasonNumber, language, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 			FileSystem.CreateDirectory(FileSystem.GetDirectoryName(path));
-			JsonSerializer.SerializeToFile((object)seasonRootObject, path);
+			JsonSerializer.SerializeToFile(seasonRootObject, path);
 		}
 		return seasonRootObject;
 	}
@@ -210,57 +212,40 @@ public class MovieDbSeasonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		{
 			throw new ArgumentNullException("tmdbId");
 		}
-		string text = $"season-{seasonNumber.ToString(CultureInfo.InvariantCulture)}";
+		string text = "season-" + seasonNumber.ToString(CultureInfo.InvariantCulture);
 		if (!string.IsNullOrEmpty(preferredLanguage))
 		{
 			text = text + "-" + preferredLanguage;
 		}
 		text += ".json";
-		return Path.Combine(MovieDbSeriesProvider.GetSeriesDataPath((IApplicationPaths)(object)ConfigurationManager.ApplicationPaths, tmdbId), text);
+		return Path.Combine(MovieDbSeriesProvider.GetSeriesDataPath(ConfigurationManager.ApplicationPaths, tmdbId), text);
 	}
 
 	private async Task<SeasonRootObject> FetchMainResult(string id, int seasonNumber, string language, CancellationToken cancellationToken)
 	{
-		var config = GetConfiguration();
-		string path = string.Format(TvSeasonPath, 
-			id, 
-			seasonNumber.ToString(CultureInfo.InvariantCulture));
-
-		string url = GetApiUrl(path) + $"&append_to_response={AppendToResponse}";
-
+		GetConfiguration();
+		string path = $"3/tv/{id}/season/{seasonNumber.ToString(CultureInfo.InvariantCulture)}";
+		string url = GetApiUrl(path) + "&append_to_response=images,keywords,external_ids,credits,videos";
 		if (!string.IsNullOrEmpty(language))
 		{
-			url += $"&language={language}";
+			url = url + "&language=" + language;
 		}
 		url = AddImageLanguageParam(url, language);
-
 		cancellationToken.ThrowIfCancellationRequested();
-
-		var response = await GetMovieDbResponse(new HttpRequestOptions
+		using HttpResponseInfo response = await GetMovieDbResponse(new HttpRequestOptions
 		{
 			Url = url,
 			CancellationToken = cancellationToken,
-			AcceptHeader = AcceptHeader
-		}).ConfigureAwait(false);
-
-		try
-		{
-			using (Stream json = response.Content)
-			{
-				return await JsonSerializer.DeserializeFromStreamAsync<SeasonRootObject>(json)
-					.ConfigureAwait(false);
-			}
-		}
-		finally
-		{
-			((IDisposable)response)?.Dispose();
-		}
+			AcceptHeader = MovieDbProviderBase.AcceptHeader
+		}).ConfigureAwait(continueOnCapturedContext: false);
+		using Stream json = response.Content;
+		return await JsonSerializer.DeserializeFromStreamAsync<SeasonRootObject>(json).ConfigureAwait(continueOnCapturedContext: false);
 	}
 
 	private new string GetApiUrl(string path)
 	{
-		var config = GetConfiguration();
-		var baseUrl = config.TmdbApiBaseUrl.TrimEnd('/');
-		return $"{baseUrl}/{path}?api_key={config.ApiKey}";
+		PluginOptions config = GetConfiguration();
+		string baseUrl = config.TmdbApiBaseUrl.TrimEnd(new char[1] { '/' });
+		return baseUrl + "/" + path + "?api_key=" + config.ApiKey;
 	}
 }

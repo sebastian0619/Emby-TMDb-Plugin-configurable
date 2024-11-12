@@ -41,7 +41,7 @@ public class MovieDbSeasonImageProvider : MovieDbProviderBase, IRemoteImageProvi
 
 	public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
 	{
-		return new List<ImageType> { (ImageType)0 };
+		return new List<ImageType> { ImageType.Primary };
 	}
 
 	public async Task<IEnumerable<RemoteImageInfo>> GetImages(RemoteImageFetchOptions options, CancellationToken cancellationToken)
@@ -49,28 +49,29 @@ public class MovieDbSeasonImageProvider : MovieDbProviderBase, IRemoteImageProvi
 		BaseItem item = options.Item;
 		List<RemoteImageInfo> list = new List<RemoteImageInfo>();
 		Season val = (Season)item;
-		ProviderIdDictionary providerIds = ((BaseItem)val.Series).ProviderIds;
-		providerIds.TryGetValue(MetadataProviders.Tmdb.ToString(), out string value);
-		if (!string.IsNullOrWhiteSpace(value) && ((BaseItem)val).IndexNumber.HasValue)
+		ProviderIdDictionary providerIds = val.Series.ProviderIds;
+		providerIds.TryGetValue(MetadataProviders.Tmdb.ToString(), out var value);
+		if (!string.IsNullOrWhiteSpace(value) && val.IndexNumber.HasValue)
 		{
 			try
 			{
-				MovieDbSeasonProvider.SeasonRootObject seasonInfo = await _seasonProvider.EnsureSeasonInfo(value, ((BaseItem)val).IndexNumber.Value, null, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+				MovieDbSeasonProvider.SeasonRootObject seasonInfo = await _seasonProvider.EnsureSeasonInfo(value, val.IndexNumber.Value, null, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 				TmdbSettingsResult tmdbSettings = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 				string tmdbImageUrl = tmdbSettings.images.GetImageUrl("original");
-				list.AddRange(((IEnumerable<TmdbImage>)GetPosters(seasonInfo?.images)).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-				{
-					Url = tmdbImageUrl + i.file_path,
-					ThumbnailUrl = tmdbSettings.images.GetPosterThumbnailImageUrl(i.file_path),
-					CommunityRating = i.vote_average,
-					VoteCount = i.vote_count,
-					Width = i.width,
-					Height = i.height,
-					Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
-					ProviderName = base.Name,
-					Type = (ImageType)0,
-					RatingType = (RatingType)0
-				})));
+				list.AddRange(from i in GetPosters(seasonInfo?.images)
+					select new RemoteImageInfo
+					{
+						Url = tmdbImageUrl + i.file_path,
+						ThumbnailUrl = tmdbSettings.images.GetPosterThumbnailImageUrl(i.file_path),
+						CommunityRating = i.vote_average,
+						VoteCount = i.vote_count,
+						Width = i.width,
+						Height = i.height,
+						Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
+						ProviderName = base.Name,
+						Type = ImageType.Primary,
+						RatingType = RatingType.Score
+					});
 			}
 			catch (HttpException)
 			{

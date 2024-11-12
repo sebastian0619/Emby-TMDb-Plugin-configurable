@@ -38,15 +38,15 @@ internal class MovieDbBoxSetImageProvider : MovieDbProviderBase, IRemoteImagePro
 	{
 		return new List<ImageType>
 		{
-			(ImageType)0,
-			(ImageType)2,
-			(ImageType)4
+			ImageType.Primary,
+			ImageType.Backdrop,
+			ImageType.Logo
 		};
 	}
 
 	public async Task<IEnumerable<RemoteImageInfo>> GetImages(RemoteImageFetchOptions options, CancellationToken cancellationToken)
 	{
-		string providerId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)options.Item, (MetadataProviders)3);
+		string providerId = options.Item.GetProviderId(MetadataProviders.Tmdb);
 		if (!string.IsNullOrEmpty(providerId))
 		{
 			MovieDbBoxSetProvider.BoxSetRootObject mainResult = await MovieDbBoxSetProvider.Current.GetMovieDbResult(providerId, null, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
@@ -69,46 +69,48 @@ internal class MovieDbBoxSetImageProvider : MovieDbProviderBase, IRemoteImagePro
 	{
 		List<RemoteImageInfo> list = new List<RemoteImageInfo>();
 		TmdbImages images = obj.images ?? new TmdbImages();
-		list.AddRange(((IEnumerable<TmdbImage>)GetPosters(images)).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-		{
-			Url = baseUrl + i.file_path,
-			ThumbnailUrl = tmdbSettings.images.GetPosterThumbnailImageUrl(i.file_path),
-			CommunityRating = i.vote_average,
-			VoteCount = i.vote_count,
-			Width = i.width,
-			Height = i.height,
-			Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
-			ProviderName = base.Name,
-			Type = (ImageType)0,
-			RatingType = (RatingType)0
-		})));
-		list.AddRange(((IEnumerable<TmdbImage>)GetLogos(images)).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-		{
-			Url = baseUrl + i.file_path,
-			ThumbnailUrl = tmdbSettings.images.GetLogoThumbnailImageUrl(i.file_path),
-			CommunityRating = i.vote_average,
-			VoteCount = i.vote_count,
-			Width = i.width,
-			Height = i.height,
-			Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
-			ProviderName = base.Name,
-			Type = (ImageType)4,
-			RatingType = (RatingType)0
-		})));
-		list.AddRange((from i in GetBackdrops(images)
+		list.AddRange(from i in GetPosters(images)
+			select new RemoteImageInfo
+			{
+				Url = baseUrl + i.file_path,
+				ThumbnailUrl = tmdbSettings.images.GetPosterThumbnailImageUrl(i.file_path),
+				CommunityRating = i.vote_average,
+				VoteCount = i.vote_count,
+				Width = i.width,
+				Height = i.height,
+				Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
+				ProviderName = base.Name,
+				Type = ImageType.Primary,
+				RatingType = RatingType.Score
+			});
+		list.AddRange(from i in GetLogos(images)
+			select new RemoteImageInfo
+			{
+				Url = baseUrl + i.file_path,
+				ThumbnailUrl = tmdbSettings.images.GetLogoThumbnailImageUrl(i.file_path),
+				CommunityRating = i.vote_average,
+				VoteCount = i.vote_count,
+				Width = i.width,
+				Height = i.height,
+				Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
+				ProviderName = base.Name,
+				Type = ImageType.Logo,
+				RatingType = RatingType.Score
+			});
+		list.AddRange(from i in GetBackdrops(images)
 			where string.IsNullOrEmpty(i.iso_639_1)
-			select i).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-		{
-			Url = baseUrl + i.file_path,
-			ThumbnailUrl = tmdbSettings.images.GetBackdropThumbnailImageUrl(i.file_path),
-			CommunityRating = i.vote_average,
-			VoteCount = i.vote_count,
-			Width = i.width,
-			Height = i.height,
-			ProviderName = base.Name,
-			Type = (ImageType)2,
-			RatingType = (RatingType)0
-		})));
+			select new RemoteImageInfo
+			{
+				Url = baseUrl + i.file_path,
+				ThumbnailUrl = tmdbSettings.images.GetBackdropThumbnailImageUrl(i.file_path),
+				CommunityRating = i.vote_average,
+				VoteCount = i.vote_count,
+				Width = i.width,
+				Height = i.height,
+				ProviderName = base.Name,
+				Type = ImageType.Backdrop,
+				RatingType = RatingType.Score
+			});
 		return list;
 	}
 }

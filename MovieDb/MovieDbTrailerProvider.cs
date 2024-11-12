@@ -20,10 +20,10 @@ public class MovieDbTrailerProvider : MovieDbProviderBase, IHasOrder, IRemoteMet
 {
 	public int Order => 0;
 
-	public MetadataFeatures[] Features => (MetadataFeatures[])(object)new MetadataFeatures[2]
+	public MetadataFeatures[] Features => new MetadataFeatures[2]
 	{
-		(MetadataFeatures)2,
-		(MetadataFeatures)1
+		MetadataFeatures.Adult,
+		MetadataFeatures.Collections
 	};
 
 	public MovieDbTrailerProvider(IHttpClient httpClient, IServerConfigurationManager configurationManager, IJsonSerializer jsonSerializer, IFileSystem fileSystem, ILocalizationManager localization, ILogManager logManager, IServerApplicationHost appHost, ILibraryManager libraryManager)
@@ -33,11 +33,11 @@ public class MovieDbTrailerProvider : MovieDbProviderBase, IHasOrder, IRemoteMet
 
 	public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(TrailerInfo searchInfo, CancellationToken cancellationToken)
 	{
-		return MovieDbProvider.Current.GetMovieSearchResults((ItemLookupInfo)(object)searchInfo, cancellationToken);
+		return MovieDbProvider.Current.GetMovieSearchResults(searchInfo, cancellationToken);
 	}
 
 	public Task<MetadataResult<Trailer>> GetMetadata(TrailerInfo info, CancellationToken cancellationToken)
 	{
-		return MovieDbProvider.Current.GetItemMetadata<Trailer>((ItemLookupInfo)(object)info, cancellationToken);
+		return MovieDbProvider.Current.GetItemMetadata<Trailer>(info, cancellationToken);
 	}
 }

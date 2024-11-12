@@ -5,8 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common;
-using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Configuration;
@@ -15,10 +13,7 @@ using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Logging;
-using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
-using MediaBrowser.Model.Services;
-using MovieDb;
 
 namespace MovieDb;
 
@@ -70,10 +65,14 @@ public abstract class MovieDbProviderBase
 		public TmdbVideos videos { get; set; }
 	}
 
+	public const string BaseMovieDbUrl = "https://tmdb.kingscross.online:8333/";
+
 	internal static string AcceptHeader = "application/json,image/*";
 
 	private const string TmdbConfigPath = "3/configuration";
+
 	private const string TmdbLanguagesPath = "3/configuration/primary_translations";
+
 	private const string EpisodeUrlPattern = "3/tv/{0}/season/{1}/episode/{2}";
 
 	protected readonly IHttpClient HttpClient;
@@ -96,69 +95,227 @@ public abstract class MovieDbProviderBase
 
 	public static TimeSpan CacheTime = TimeSpan.FromHours(6.0);
 
+	private static TmdbSettingsResult _tmdbSettings;
+
+	private static string[] _tmdbLanguages;
+
 	private static long _lastRequestTicks;
 
 	private static int requestIntervalMs = 100;
+
+	private static readonly object _settingsLock = new object();
+
+	private readonly ILogger _logger;
 
 	public string Name => ProviderName;
 
 	public static string ProviderName => "TheMovieDb";
 
-	private static readonly object _settingsLock = new object();
-
-	protected string GetImageUrl(string size, string imagePath)
-	{
-		if (string.IsNullOrEmpty(imagePath))
-		{
-			return null;
-		}
-
-		var config = GetConfiguration();
-		var baseUrl = config.TmdbImageBaseUrl?.TrimEnd('/') ?? "https://image.tmdb.org/t/p";
-		return $"{baseUrl}/{size}{imagePath}";
-	}
-
 	protected string GetApiUrl(string path)
 	{
-		var config = GetConfiguration();
-		var baseUrl = config.TmdbApiBaseUrl?.TrimEnd('/') ?? "https://api.themoviedb.org";
-		var apiKey = config.ApiKey;
-		
-		return $"{baseUrl}/{path.TrimStart('/')}?api_key={apiKey}";
+		try
+		{
+			PluginOptions config = GetConfiguration();
+			string baseUrl = config.TmdbApiBaseUrl?.TrimEnd(new char[1] { '/' }) ?? "https://tmdb.kingscross.online:8333";
+			string apiKey = config.ApiKey;
+			if (string.IsNullOrEmpty(apiKey))
+			{
+				Logger.Error("TMDB API key is not configured");
+				throw new InvalidOperationException("TMDB API key is not configured");
+			}
+			return baseUrl + "/" + path + "?api_key=" + apiKey;
+		}
+		catch (Exception ex)
+		{
+			Logger.Error("Error generating API URL: {0}", ex);
+			throw;
+		}
 	}
 
-	internal async Task<HttpResponseInfo> GetMovieDbResponse(HttpRequestOptions options)
+	protected string GetImageUrl(string imagePath)
 	{
-		long num = Math.Min((requestIntervalMs * 10000 - (DateTimeOffset.UtcNow.Ticks - _lastRequestTicks)) / 10000, requestIntervalMs);
-		if (num > 0)
+		try
 		{
-			Logger.Debug("Throttling Tmdb by {0} ms", num);
-			await Task.Delay(Convert.ToInt32(num)).ConfigureAwait(false);
+			if (string.IsNullOrEmpty(imagePath))
+			{
+				return null;
+			}
+			PluginOptions config = GetConfiguration();
+			string baseUrl = config.TmdbImageBaseUrl?.TrimEnd(new char[1] { '/' }) ?? "https://image.tmdb.org/t/p/";
+			return baseUrl + "/" + imagePath.TrimStart(new char[1] { '/' });
 		}
-		_lastRequestTicks = DateTimeOffset.UtcNow.Ticks;
-		
-		options.BufferContent = true;
-		options.UserAgent = "Emby/" + AppHost.ApplicationVersion;
-		options.AcceptHeader = AcceptHeader;
-		
-		return await HttpClient.SendAsync(options, "GET").ConfigureAwait(false);
+		catch (Exception ex)
+		{
+			Logger.Error("Error generating image URL: {0}", ex);
+			throw;
+		}
+	}
+
+	public async Task<TmdbSettingsResult> GetTmdbSettings(CancellationToken cancellationToken)
+	{
+		if (_tmdbSettings != null)
+		{
+			EnsureImageUrls(_tmdbSettings);
+			return _tmdbSettings;
+		}
+		HttpResponseInfo response = null;
+		try
+		{
+			response = await GetMovieDbResponse(new HttpRequestOptions
+			{
+				Url = GetApiUrl("3/configuration"),
+				CancellationToken = cancellationToken,
+				AcceptHeader = AcceptHeader
+			}).ConfigureAwait(continueOnCapturedContext: false);
+			using Stream json = response.Content;
+			using StreamReader reader = new StreamReader(json);
+			string text = await reader.ReadToEndAsync().ConfigureAwait(continueOnCapturedContext: false);
+			Logger.Info("MovieDb settings: {0}", text);
+			lock (_settingsLock)
+			{
+				_tmdbSettings = JsonSerializer.DeserializeFromString<TmdbSettingsResult>(text);
+				EnsureImageUrls(_tmdbSettings);
+			}
+		}
+		catch (Exception ex2)
+		{
+			Exception ex = ex2;
+			Logger.Error("Error getting TMDb settings: {0}", ex);
+			lock (_settingsLock)
+			{
+				_tmdbSettings = new TmdbSettingsResult
+				{
+					images = new TmdbImageSettings
+					{
+						secure_base_url = GetConfiguration().TmdbImageBaseUrl
+					}
+				};
+			}
+		}
+		finally
+		{
+			if (response != null)
+			{
+				((IDisposable)response)?.Dispose();
+			}
+		}
+		return _tmdbSettings;
+	}
+
+	private void EnsureImageUrls(TmdbSettingsResult settings)
+	{
+		if (settings?.images != null)
+		{
+			settings.images.secure_base_url = GetConfiguration().TmdbImageBaseUrl;
+		}
+	}
+
+	public MovieDbProviderBase(IHttpClient httpClient, IServerConfigurationManager configurationManager, IJsonSerializer jsonSerializer, IFileSystem fileSystem, ILocalizationManager localization, ILogManager logManager, IServerApplicationHost applicationHost, ILibraryManager libraryManager)
+	{
+		HttpClient = httpClient;
+		ConfigurationManager = configurationManager;
+		JsonSerializer = jsonSerializer;
+		FileSystem = fileSystem;
+		Localization = localization;
+		LogManager = logManager;
+		Logger = logManager.GetLogger(Name);
+		AppHost = applicationHost;
+		LibraryManager = libraryManager;
+	}
+
+	protected async Task<RootObject> GetEpisodeInfo(string tmdbId, int seasonNumber, int episodeNumber, string language, IDirectoryService directoryService, CancellationToken cancellationToken)
+	{
+		if (string.IsNullOrEmpty(tmdbId))
+		{
+			throw new ArgumentNullException("tmdbId");
+		}
+		string cacheKey = "tmdb_episode_" + tmdbId;
+		if (!string.IsNullOrEmpty(language))
+		{
+			cacheKey = cacheKey + "_" + language;
+		}
+		cacheKey = cacheKey + "_" + seasonNumber + "_" + episodeNumber;
+		RootObject rootObject = null;
+		if (!directoryService.TryGetFromCache<RootObject>(cacheKey, out rootObject))
+		{
+			string dataFilePath = GetDataFilePath(tmdbId, seasonNumber, episodeNumber, language);
+			FileSystemMetadata fileSystemInfo = FileSystem.GetFileSystemInfo(dataFilePath);
+			if (fileSystemInfo.Exists && DateTimeOffset.UtcNow - FileSystem.GetLastWriteTimeUtc(fileSystemInfo) <= CacheTime)
+			{
+				rootObject = await JsonSerializer.DeserializeFromFileAsync<RootObject>(dataFilePath).ConfigureAwait(continueOnCapturedContext: false);
+			}
+			if (rootObject == null)
+			{
+				FileSystem.CreateDirectory(FileSystem.GetDirectoryName(dataFilePath));
+				rootObject = await DownloadEpisodeInfo(tmdbId, seasonNumber, episodeNumber, language, dataFilePath, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+				using Stream stream = FileSystem.GetFileStream(dataFilePath, FileOpenMode.Create, FileAccessMode.Write, FileShareMode.Read);
+				JsonSerializer.SerializeToStream(rootObject, stream);
+			}
+			directoryService.AddOrUpdateCache(cacheKey, rootObject);
+		}
+		return rootObject;
+	}
+
+	internal string GetDataFilePath(string tmdbId, int seasonNumber, int episodeNumber, string preferredLanguage)
+	{
+		if (string.IsNullOrEmpty(tmdbId))
+		{
+			throw new ArgumentNullException("tmdbId");
+		}
+		string text = "season-" + seasonNumber.ToString(CultureInfo.InvariantCulture) + "-episode-" + episodeNumber.ToString(CultureInfo.InvariantCulture);
+		if (!string.IsNullOrEmpty(preferredLanguage))
+		{
+			text = text + "-" + preferredLanguage;
+		}
+		text += ".json";
+		return Path.Combine(MovieDbSeriesProvider.GetSeriesDataPath(ConfigurationManager.ApplicationPaths, tmdbId), text);
+	}
+
+	internal async Task<RootObject> DownloadEpisodeInfo(string id, int seasonNumber, int episodeNumber, string preferredMetadataLanguage, string dataFilePath, CancellationToken cancellationToken)
+	{
+		RootObject rootObject = await FetchMainResult(id, seasonNumber, episodeNumber, preferredMetadataLanguage, dataFilePath, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+		FileSystem.CreateDirectory(FileSystem.GetDirectoryName(dataFilePath));
+		JsonSerializer.SerializeToFile(rootObject, dataFilePath);
+		return rootObject;
+	}
+
+	internal async Task<RootObject> FetchMainResult(string id, int seasonNumber, int episodeNumber, string language, string dataFilePath, CancellationToken cancellationToken)
+	{
+		string path = $"3/tv/{id}/season/{seasonNumber.ToString(CultureInfo.InvariantCulture)}/episode/{episodeNumber.ToString(CultureInfo.InvariantCulture)}";
+		string url = GetApiUrl(path);
+		if (!string.IsNullOrEmpty(language))
+		{
+			url = url + "&language=" + language;
+		}
+		url += "&append_to_response=images,external_ids,credits,videos";
+		url = AddImageLanguageParam(url, language);
+		cancellationToken.ThrowIfCancellationRequested();
+		using HttpResponseInfo response = await GetMovieDbResponse(new HttpRequestOptions
+		{
+			Url = url,
+			CancellationToken = cancellationToken,
+			AcceptHeader = AcceptHeader
+		}).ConfigureAwait(continueOnCapturedContext: false);
+		using Stream json = response.Content;
+		return await JsonSerializer.DeserializeFromStreamAsync<RootObject>(json).ConfigureAwait(continueOnCapturedContext: false);
 	}
 
 	public async Task<string[]> GetTmdbLanguages(CancellationToken cancellationToken)
 	{
-		var response = await GetMovieDbResponse(new HttpRequestOptions
+		if (_tmdbLanguages != null)
 		{
-			Url = GetApiUrl(TmdbLanguagesPath),
+			return _tmdbLanguages;
+		}
+		using Stream json = (await GetMovieDbResponse(new HttpRequestOptions
+		{
+			Url = GetApiUrl("3/configuration/primary_translations"),
 			CancellationToken = cancellationToken,
 			AcceptHeader = AcceptHeader
-		}).ConfigureAwait(false);
-
-		using (Stream json = response.Content)
-		using (StreamReader reader = new StreamReader(json))
-		{
-			var text = await reader.ReadToEndAsync().ConfigureAwait(false);
-			return JsonSerializer.DeserializeFromString<string[]>(text);
-		}
+		}).ConfigureAwait(continueOnCapturedContext: false)).Content;
+		using StreamReader reader = new StreamReader(json);
+		string text = await reader.ReadToEndAsync().ConfigureAwait(continueOnCapturedContext: false);
+		_tmdbLanguages = JsonSerializer.DeserializeFromString<string[]>(text);
+		return _tmdbLanguages;
 	}
 
 	public string AddImageLanguageParam(string url, string tmdbLanguage)
@@ -184,7 +341,7 @@ public abstract class MovieDbProviderBase
 				list.Add(text);
 			}
 		}
-		if (!list.Contains<string>("en", StringComparer.OrdinalIgnoreCase) && !list.Contains<string>("en-us", StringComparer.OrdinalIgnoreCase))
+		if (!list.Contains("en", StringComparer.OrdinalIgnoreCase) && !list.Contains("en-us", StringComparer.OrdinalIgnoreCase))
 		{
 			string text2 = MapLanguageToProviderLanguage("en-us", null, exactMatchOnly: false, providerLanguages);
 			if (!string.IsNullOrEmpty(text2))
@@ -287,12 +444,25 @@ public abstract class MovieDbProviderBase
 
 	public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
 	{
-
 		return HttpClient.GetResponse(new HttpRequestOptions
 		{
 			CancellationToken = cancellationToken,
 			Url = url
 		});
+	}
+
+	internal async Task<HttpResponseInfo> GetMovieDbResponse(HttpRequestOptions options)
+	{
+		long num = Math.Min((requestIntervalMs * 10000 - (DateTimeOffset.UtcNow.Ticks - _lastRequestTicks)) / 10000, requestIntervalMs);
+		if (num > 0)
+		{
+			Logger.Debug("Throttling Tmdb by {0} ms", num);
+			await Task.Delay(Convert.ToInt32(num)).ConfigureAwait(continueOnCapturedContext: false);
+		}
+		_lastRequestTicks = DateTimeOffset.UtcNow.Ticks;
+		options.BufferContent = true;
+		options.UserAgent = "Emby/" + AppHost.ApplicationVersion;
+		return await HttpClient.SendAsync(options, "GET").ConfigureAwait(continueOnCapturedContext: false);
 	}
 
 	protected List<TmdbImage> GetLogos(TmdbImages images)
@@ -307,76 +477,46 @@ public abstract class MovieDbProviderBase
 
 	protected IEnumerable<TmdbImage> GetBackdrops(TmdbImages images)
 	{
-		return (images?.backdrops ?? new List<TmdbImage>()).OrderByDescending(i => i.vote_average)
-			.ThenByDescending(i => i.vote_count);
+		return from i in images?.backdrops ?? new List<TmdbImage>()
+			orderby i.vote_average descending, i.vote_count descending
+			select i;
 	}
 
 	protected PluginOptions GetConfiguration()
 	{
-		var instance = Plugin.Instance;
-		if (instance?.Configuration == null)
+		Plugin instance = Plugin.Instance;
+		if (instance == null)
 		{
-			Logger.Error("MovieDb Plugin 配置无效");
-			throw new InvalidOperationException("MovieDb Plugin 配置无效");
+			Logger.Error("MovieDb Plugin instance is null");
+			return GetDefaultConfiguration();
 		}
+		PluginOptions config = instance.Configuration;
+		if (config == null)
+		{
+			Logger.Error("MovieDb Plugin configuration is null");
+			return GetDefaultConfiguration();
+		}
+		return config;
+	}
 
-		return instance.Configuration;
+	private PluginOptions GetDefaultConfiguration()
+	{
+		return new PluginOptions
+		{
+			TmdbApiBaseUrl = "https://tmdb.kingscross.online:8333",
+			TmdbImageBaseUrl = "https://image.kingscross.online:8333/t/p/",
+			ApiKey = "59ef6336a19540cd1e254cae0565906e"
+		};
 	}
 
 	protected string GetApiKey()
 	{
-		var config = GetConfiguration();
+		PluginOptions config = GetConfiguration();
 		return config.ApiKey;
 	}
 
-	protected MovieDbProviderBase(
-		IHttpClient httpClient,
-		IServerConfigurationManager configurationManager,
-		IJsonSerializer jsonSerializer,
-		IFileSystem fileSystem,
-		ILocalizationManager localization,
-		ILogManager logManager,
-		IServerApplicationHost appHost,
-		ILibraryManager libraryManager)
+	protected MovieDbProviderBase(ILogger logger)
 	{
-		HttpClient = httpClient;
-		ConfigurationManager = configurationManager;
-		JsonSerializer = jsonSerializer;
-		FileSystem = fileSystem;
-		Localization = localization;
-		Logger = logManager.GetLogger(Name);
-		LogManager = logManager;
-		AppHost = appHost;
-		LibraryManager = libraryManager;
-	}
-
-	protected async Task<RootObject> GetEpisodeInfo(
-		string seriesId,
-		int seasonNumber,
-		int episodeNumber,
-		string language,
-		IDirectoryService directoryService,
-		CancellationToken cancellationToken)
-	{
-		var path = string.Format(EpisodeUrlPattern, seriesId, seasonNumber, episodeNumber);
-		var url = GetApiUrl(path);
-		
-		if (!string.IsNullOrEmpty(language))
-		{
-			url += $"&language={language}";
-		}
-
-		url += "&append_to_response=images,external_ids,credits,videos";
-
-		var options = new HttpRequestOptions
-		{
-			Url = url,
-			CancellationToken = cancellationToken
-		};
-
-		using var response = await GetMovieDbResponse(options).ConfigureAwait(false);
-		using var json = response.Content;
-		
-		return await JsonSerializer.DeserializeFromStreamAsync<RootObject>(json).ConfigureAwait(false);
+		_logger = logger;
 	}
 }

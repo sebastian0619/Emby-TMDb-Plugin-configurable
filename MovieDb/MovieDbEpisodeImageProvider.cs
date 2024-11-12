@@ -34,7 +34,7 @@ public class MovieDbEpisodeImageProvider : MovieDbProviderBase, IRemoteImageProv
 
 	public IEnumerable<ImageType> GetSupportedImages(BaseItem item)
 	{
-		return new List<ImageType> { (ImageType)0 };
+		return new List<ImageType> { ImageType.Primary };
 	}
 
 	public async Task<IEnumerable<RemoteImageInfo>> GetImages(RemoteImageFetchOptions options, CancellationToken cancellationToken)
@@ -43,14 +43,14 @@ public class MovieDbEpisodeImageProvider : MovieDbProviderBase, IRemoteImageProv
 		_ = options.LibraryOptions;
 		Episode val = (Episode)item;
 		Series series = val.Series;
-		string text = ((series != null) ? ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)series, (MetadataProviders)3) : null);
+		string text = ((series != null) ? series.GetProviderId(MetadataProviders.Tmdb) : null);
 		List<RemoteImageInfo> list = new List<RemoteImageInfo>();
 		if (string.IsNullOrEmpty(text))
 		{
 			return list;
 		}
-		int? parentIndexNumber = ((BaseItem)val).ParentIndexNumber;
-		int? indexNumber = ((BaseItem)val).IndexNumber;
+		int? parentIndexNumber = val.ParentIndexNumber;
+		int? indexNumber = val.IndexNumber;
 		if (!parentIndexNumber.HasValue || !indexNumber.HasValue)
 		{
 			return list;
@@ -68,8 +68,9 @@ public class MovieDbEpisodeImageProvider : MovieDbProviderBase, IRemoteImageProv
 					return list;
 				}
 			}
-			catch (Exception ex)
+			catch (Exception ex2)
 			{
+				Exception ex = ex2;
 				Logger.Error("Error getting TMDB settings: {0}", ex);
 				return list;
 			}
@@ -79,24 +80,24 @@ public class MovieDbEpisodeImageProvider : MovieDbProviderBase, IRemoteImageProv
 				Logger.Error("TMDB image URL is empty");
 				return list;
 			}
-			list.AddRange(((IEnumerable<TmdbImage>)GetPosters(response.images)).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-			{
-				Url = tmdbImageUrl + i.file_path,
-				ThumbnailUrl = tmdbSettings.images.GetBackdropThumbnailImageUrl(i.file_path),
-				CommunityRating = i.vote_average,
-				VoteCount = i.vote_count,
-				Width = i.width,
-				Height = i.height,
-				Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
-				ProviderName = base.Name,
-				Type = (ImageType)0,
-				RatingType = (RatingType)0
-			})));
+			list.AddRange(from i in GetPosters(response.images)
+				select new RemoteImageInfo
+				{
+					Url = tmdbImageUrl + i.file_path,
+					ThumbnailUrl = tmdbSettings.images.GetBackdropThumbnailImageUrl(i.file_path),
+					CommunityRating = i.vote_average,
+					VoteCount = i.vote_count,
+					Width = i.width,
+					Height = i.height,
+					Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
+					ProviderName = base.Name,
+					Type = ImageType.Primary,
+					RatingType = RatingType.Score
+				});
 			return list;
 		}
-		catch (HttpException val2)
+		catch (HttpException val3)
 		{
-			HttpException val3 = val2;
 			if (val3.StatusCode.HasValue && val3.StatusCode.Value == HttpStatusCode.NotFound)
 			{
 				return list;

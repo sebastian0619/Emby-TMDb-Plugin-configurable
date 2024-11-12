@@ -208,16 +208,16 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 		}
 	}
 
-	// 定义 API 路径模板
 	private const string MovieInfoPath = "3/movie/{0}";
+
 	private const string AppendToResponse = "alternative_titles,reviews,casts,releases,images,keywords,trailers";
 
 	internal static MovieDbProvider Current { get; private set; }
 
-	public MetadataFeatures[] Features => (MetadataFeatures[])(object)new MetadataFeatures[2]
+	public MetadataFeatures[] Features => new MetadataFeatures[2]
 	{
-		(MetadataFeatures)2,
-		(MetadataFeatures)1
+		MetadataFeatures.Adult,
+		MetadataFeatures.Collections
 	};
 
 	public int Order => 1;
@@ -228,40 +228,49 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 		Current = this;
 	}
 
-	public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(ItemLookupInfo searchInfo, CancellationToken cancellationToken)
+	public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MovieInfo searchInfo, CancellationToken cancellationToken)
 	{
-		// 获取支持的语言列表
-		var languages = await GetTmdbLanguages(cancellationToken)
-			.ConfigureAwait(false);
-		
-		// 获取元数据语言
-		string[] metadataLanguages = GetMovieDbMetadataLanguages(searchInfo, languages);
+		return GetMovieSearchResults(searchInfo, cancellationToken);
+	}
 
-		// 根据类型使用不同的搜索实现
-		var movieDbSearch = new MovieDbSearch(Logger, JsonSerializer, LibraryManager);
-		
-		if (searchInfo is SeriesInfo seriesInfo)
+	public async Task<IEnumerable<RemoteSearchResult>> GetMovieSearchResults(ItemLookupInfo searchInfo, CancellationToken cancellationToken)
+	{
+		string tmdbId = searchInfo.GetProviderId(MetadataProviders.Tmdb);
+		TmdbSettingsResult tmdbSettings = null;
+		if (!string.IsNullOrEmpty(tmdbId))
 		{
-			return await movieDbSearch.GetSearchResults(
-				seriesInfo,
-				metadataLanguages,
-				cancellationToken).ConfigureAwait(false);
+			MetadataResult<Movie> val = await GetItemMetadata<Movie>(searchInfo, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+			if (!val.HasMetadata)
+			{
+				return new List<RemoteSearchResult>();
+			}
+			RemoteSearchResult result = val.ToRemoteSearchResult(base.Name);
+			List<TmdbImage> images = ((await EnsureMovieInfo(tmdbId, null, cancellationToken).ConfigureAwait(continueOnCapturedContext: false))?.images ?? new TmdbImages()).posters ?? new List<TmdbImage>();
+			string imageUrl = (await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).images.GetImageUrl("original");
+			result.ImageUrl = ((images.Count == 0) ? null : (imageUrl + images[0].file_path));
+			return new RemoteSearchResult[1] { result };
 		}
-		else if (searchInfo is MovieInfo movieInfo)
+		string providerId = searchInfo.GetProviderId(MetadataProviders.Imdb);
+		if (!string.IsNullOrEmpty(providerId))
 		{
-			return await movieDbSearch.GetSearchResults(
-				movieInfo,
-				metadataLanguages,
-				cancellationToken).ConfigureAwait(false);
+			MovieDbSearch movieDbSearch = new MovieDbSearch(Logger, JsonSerializer, LibraryManager);
+			RemoteSearchResult val3 = await movieDbSearch.FindMovieByExternalId(providerId, "imdb_id", MetadataProviders.Imdb.ToString(), cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+			if (val3 != null)
+			{
+				return new RemoteSearchResult[1] { val3 };
+			}
 		}
-		
-		// 不支持的类型返回空结果
-		return new List<RemoteSearchResult>();
+		if (tmdbSettings == null)
+		{
+			tmdbSettings = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
+		}
+		string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages(searchInfo, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
+		return await new MovieDbSearch(Logger, JsonSerializer, LibraryManager).GetMovieSearchResults(searchInfo, movieDbMetadataLanguages, tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 	}
 
 	public Task<MetadataResult<Movie>> GetMetadata(MovieInfo info, CancellationToken cancellationToken)
 	{
-		return this.GetItemMetadata<Movie>((ItemLookupInfo)(object)info, cancellationToken);
+		return GetItemMetadata<Movie>(info, cancellationToken);
 	}
 
 	public Task<MetadataResult<T>> GetItemMetadata<T>(ItemLookupInfo id, CancellationToken cancellationToken) where T : BaseItem, new()
@@ -287,7 +296,7 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 			return null;
 		}
 		FileSystem.CreateDirectory(FileSystem.GetDirectoryName(dataFilePath));
-		JsonSerializer.SerializeToFile((object)completeMovieData, dataFilePath);
+		JsonSerializer.SerializeToFile(completeMovieData, dataFilePath);
 		return completeMovieData;
 	}
 
@@ -295,17 +304,14 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 	{
 		if (string.IsNullOrEmpty(tmdbId))
 		{
-			throw new ArgumentNullException(nameof(tmdbId));
+			throw new ArgumentNullException("tmdbId");
 		}
-
 		string dataFilePath = GetDataFilePath(tmdbId, language);
 		FileSystemMetadata fileSystemInfo = FileSystem.GetFileSystemInfo(dataFilePath);
-
-		if (fileSystemInfo.Exists && DateTimeOffset.UtcNow - FileSystem.GetLastWriteTimeUtc(fileSystemInfo) <= CacheTime)
+		if (fileSystemInfo.Exists && DateTimeOffset.UtcNow - FileSystem.GetLastWriteTimeUtc(fileSystemInfo) <= MovieDbProviderBase.CacheTime)
 		{
 			return await JsonSerializer.DeserializeFromFileAsync<CompleteMovieData>(fileSystemInfo.FullName);
 		}
-
 		return await DownloadMovieInfo(tmdbId, language, dataFilePath, cancellationToken);
 	}
 
@@ -321,49 +327,34 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 			text = text + "-" + preferredLanguage;
 		}
 		text += ".json";
-		return Path.Combine(GetMovieDataPath((IApplicationPaths)(object)ConfigurationManager.ApplicationPaths, tmdbId), text);
+		return Path.Combine(GetMovieDataPath(ConfigurationManager.ApplicationPaths, tmdbId), text);
 	}
 
 	internal async Task<CompleteMovieData> FetchMainResult(string id, bool isTmdbId, string language, CancellationToken cancellationToken)
 	{
-		var config = GetConfiguration();
-		string path = string.Format(MovieInfoPath, id);
-		string url = GetApiUrl(path) + $"&append_to_response={AppendToResponse}";
-
+		GetConfiguration();
+		string path = $"3/movie/{id}";
+		string url = GetApiUrl(path) + "&append_to_response=alternative_titles,reviews,casts,releases,images,keywords,trailers";
 		if (!string.IsNullOrEmpty(language))
 		{
-			url += $"&language={language}";
+			url = url + "&language=" + language;
 		}
 		url = AddImageLanguageParam(url, language);
-
 		cancellationToken.ThrowIfCancellationRequested();
-
-		CacheMode cacheMode = isTmdbId ? CacheMode.None : CacheMode.Unconditional;
-		TimeSpan cacheTime = CacheTime;
-
+		CacheMode cacheMode = ((!isTmdbId) ? CacheMode.Unconditional : CacheMode.None);
+		TimeSpan cacheTime = MovieDbProviderBase.CacheTime;
 		try
 		{
-			var response = await GetMovieDbResponse(new HttpRequestOptions
+			using HttpResponseInfo response = await GetMovieDbResponse(new HttpRequestOptions
 			{
 				Url = url,
 				CancellationToken = cancellationToken,
-				AcceptHeader = AcceptHeader,
+				AcceptHeader = MovieDbProviderBase.AcceptHeader,
 				CacheMode = cacheMode,
 				CacheLength = cacheTime
-			}).ConfigureAwait(false);
-
-			try
-			{
-				using (Stream json = response.Content)
-				{
-					return await JsonSerializer.DeserializeFromStreamAsync<CompleteMovieData>(json)
-						.ConfigureAwait(false);
-				}
-			}
-			finally
-			{
-				((IDisposable)response)?.Dispose();
-			}
+			}).ConfigureAwait(continueOnCapturedContext: false);
+			using Stream json = response.Content;
+			return await JsonSerializer.DeserializeFromStreamAsync<CompleteMovieData>(json).ConfigureAwait(continueOnCapturedContext: false);
 		}
 		catch (HttpException ex)
 		{
@@ -375,32 +366,10 @@ public class MovieDbProvider : MovieDbProviderBase, IRemoteMetadataProvider<Movi
 		}
 	}
 
-	// 添加 new 关键字来显式隐藏基类的 GetApiUrl 方法
 	private new string GetApiUrl(string path)
 	{
-		var config = GetConfiguration();
-		var baseUrl = config.TmdbApiBaseUrl.TrimEnd('/');
-		return $"{baseUrl}/{path}?api_key={config.ApiKey}";
-	}
-
-	// 修改 GetMovieDbMetadataLanguages 方法使其更通用
-	protected string[] GetMovieDbMetadataLanguages(ItemLookupInfo info, List<string> languages)
-	{
-		if (languages == null || languages.Count == 0)
-		{
-			return new string[] { "en" };  // 默认使用英语
-		}
-
-		var configLanguages = ConfigurationManager.Configuration.PreferredMetadataLanguage;
-		
-		// 如果配置的语言在支持的语言列表中，优先使用它
-		if (!string.IsNullOrEmpty(configLanguages) && 
-			languages.Contains(configLanguages, StringComparer.OrdinalIgnoreCase))
-		{
-			return new string[] { configLanguages };
-		}
-
-		// 否则使用第一个支持的语言
-		return new string[] { languages[0] };
+		PluginOptions config = GetConfiguration();
+		string baseUrl = config.TmdbApiBaseUrl.TrimEnd(new char[1] { '/' });
+		return baseUrl + "/" + path + "?api_key=" + config.ApiKey;
 	}
 }

@@ -39,9 +39,9 @@ public class MovieDbSeriesImageProvider : MovieDbProviderBase, IRemoteImageProvi
 	{
 		return new List<ImageType>
 		{
-			(ImageType)0,
-			(ImageType)2,
-			(ImageType)4
+			ImageType.Primary,
+			ImageType.Backdrop,
+			ImageType.Logo
 		};
 	}
 
@@ -56,46 +56,48 @@ public class MovieDbSeriesImageProvider : MovieDbProviderBase, IRemoteImageProvi
 		}
 		TmdbSettingsResult tmdbSettings = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 		string tmdbImageUrl = tmdbSettings.images.GetImageUrl("original");
-		list.AddRange(((IEnumerable<TmdbImage>)GetPosters(results)).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-		{
-			Url = tmdbImageUrl + i.file_path,
-			ThumbnailUrl = tmdbSettings.images.GetPosterThumbnailImageUrl(i.file_path),
-			CommunityRating = i.vote_average,
-			VoteCount = i.vote_count,
-			Width = i.width,
-			Height = i.height,
-			Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
-			ProviderName = base.Name,
-			Type = (ImageType)0,
-			RatingType = (RatingType)0
-		})));
-		list.AddRange(((IEnumerable<TmdbImage>)GetLogos(results)).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-		{
-			Url = tmdbImageUrl + i.file_path,
-			ThumbnailUrl = tmdbSettings.images.GetLogoThumbnailImageUrl(i.file_path),
-			CommunityRating = i.vote_average,
-			VoteCount = i.vote_count,
-			Width = i.width,
-			Height = i.height,
-			Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
-			ProviderName = base.Name,
-			Type = (ImageType)4,
-			RatingType = (RatingType)0
-		})));
-		IEnumerable<RemoteImageInfo> collection = (from i in GetBackdrops(results)
+		list.AddRange(from i in GetPosters(results)
+			select new RemoteImageInfo
+			{
+				Url = tmdbImageUrl + i.file_path,
+				ThumbnailUrl = tmdbSettings.images.GetPosterThumbnailImageUrl(i.file_path),
+				CommunityRating = i.vote_average,
+				VoteCount = i.vote_count,
+				Width = i.width,
+				Height = i.height,
+				Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
+				ProviderName = base.Name,
+				Type = ImageType.Primary,
+				RatingType = RatingType.Score
+			});
+		list.AddRange(from i in GetLogos(results)
+			select new RemoteImageInfo
+			{
+				Url = tmdbImageUrl + i.file_path,
+				ThumbnailUrl = tmdbSettings.images.GetLogoThumbnailImageUrl(i.file_path),
+				CommunityRating = i.vote_average,
+				VoteCount = i.vote_count,
+				Width = i.width,
+				Height = i.height,
+				Language = MovieDbImageProvider.NormalizeImageLanguage(i.iso_639_1),
+				ProviderName = base.Name,
+				Type = ImageType.Logo,
+				RatingType = RatingType.Score
+			});
+		IEnumerable<RemoteImageInfo> collection = from i in GetBackdrops(results)
 			where string.IsNullOrEmpty(i.iso_639_1)
-			select i).Select((Func<TmdbImage, RemoteImageInfo>)((TmdbImage i) => new RemoteImageInfo
-		{
-			Url = tmdbImageUrl + i.file_path,
-			ThumbnailUrl = tmdbSettings.images.GetBackdropThumbnailImageUrl(i.file_path),
-			CommunityRating = i.vote_average,
-			VoteCount = i.vote_count,
-			Width = i.width,
-			Height = i.height,
-			ProviderName = base.Name,
-			Type = (ImageType)2,
-			RatingType = (RatingType)0
-		}));
+			select new RemoteImageInfo
+			{
+				Url = tmdbImageUrl + i.file_path,
+				ThumbnailUrl = tmdbSettings.images.GetBackdropThumbnailImageUrl(i.file_path),
+				CommunityRating = i.vote_average,
+				VoteCount = i.vote_count,
+				Width = i.width,
+				Height = i.height,
+				ProviderName = base.Name,
+				Type = ImageType.Backdrop,
+				RatingType = RatingType.Score
+			};
 		list.AddRange(collection);
 		return list;
 	}
@@ -107,7 +109,7 @@ public class MovieDbSeriesImageProvider : MovieDbProviderBase, IRemoteImageProvi
 
 	private async Task<TmdbImages> FetchImages(BaseItem item, IJsonSerializer jsonSerializer, CancellationToken cancellationToken)
 	{
-		string providerId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)item, (MetadataProviders)3);
+		string providerId = item.GetProviderId(MetadataProviders.Tmdb);
 		if (string.IsNullOrEmpty(providerId))
 		{
 			return null;

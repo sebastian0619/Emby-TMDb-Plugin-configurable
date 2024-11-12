@@ -25,7 +25,7 @@ namespace MovieDb;
 
 public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProviderWithOptions<Episode, EpisodeInfo>, IRemoteMetadataProvider<Episode, EpisodeInfo>, IMetadataProvider<Episode>, IMetadataProvider, IRemoteMetadataProvider, IRemoteSearchProvider<EpisodeInfo>, IRemoteSearchProvider, IHasOrder, IHasMetadataFeatures
 {
-	public MetadataFeatures[] Features => (MetadataFeatures[])(object)new MetadataFeatures[1] { (MetadataFeatures)2 };
+	public MetadataFeatures[] Features => new MetadataFeatures[1] { MetadataFeatures.Adult };
 
 	public int Order => 1;
 
@@ -41,11 +41,11 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 		MetadataResult<Episode> val = await GetMetadata(new RemoteMetadataFetchOptions<EpisodeInfo>
 		{
 			SearchInfo = searchInfo,
-			DirectoryService = (IDirectoryService)(object)directoryService
+			DirectoryService = directoryService
 		}, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-		if (((BaseMetadataResult)val).HasMetadata)
+		if (val.HasMetadata)
 		{
-			list.Add(((BaseMetadataResult)val).ToRemoteSearchResult(base.Name));
+			list.Add(val.ToRemoteSearchResult(base.Name));
 		}
 		return list;
 	}
@@ -64,25 +64,27 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 		{
 			return result;
 		}
-		int? seasonNumber = ((ItemLookupInfo)info).ParentIndexNumber;
-		int? episodeNumber = ((ItemLookupInfo)info).IndexNumber;
+		int? seasonNumber = info.ParentIndexNumber;
+		int? episodeNumber = info.IndexNumber;
 		if (!seasonNumber.HasValue || !episodeNumber.HasValue)
 		{
 			return result;
 		}
 		TmdbSettingsResult tmdbSettings = await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-		string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages((ItemLookupInfo)(object)info, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
+		ItemLookupInfo searchInfo = info;
+		string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages(searchInfo, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
 		bool isFirstLanguage = true;
 		string[] array = movieDbMetadataLanguages;
-		foreach (string language in array)
+		string[] array2 = array;
+		foreach (string language in array2)
 		{
 			try
 			{
 				RootObject rootObject = await GetEpisodeInfo(seriesTmdbId, seasonNumber.Value, episodeNumber.Value, language, options.DirectoryService, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 				if (rootObject != null)
 				{
-					((BaseMetadataResult)result).HasMetadata = true;
-					((BaseMetadataResult)result).QueriedById = true;
+					result.HasMetadata = true;
+					result.QueriedById = true;
 					if (result.Item == null)
 					{
 						result.Item = new Episode();
@@ -110,11 +112,11 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 
 	private bool IsComplete(Episode item)
 	{
-		if (string.IsNullOrEmpty(((BaseItem)item).Name))
+		if (string.IsNullOrEmpty(item.Name))
 		{
 			return false;
 		}
-		if (string.IsNullOrEmpty(((BaseItem)item).Overview))
+		if (string.IsNullOrEmpty(item.Overview))
 		{
 			return false;
 		}
@@ -124,52 +126,52 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 	private void ImportData(MetadataResult<Episode> result, EpisodeInfo info, RootObject response, TmdbSettingsResult settings, bool isFirstLanguage)
 	{
 		Episode item = result.Item;
-		if (string.IsNullOrEmpty(((BaseItem)item).Name))
+		if (string.IsNullOrEmpty(item.Name))
 		{
-			((BaseItem)item).Name = response.name;
+			item.Name = response.name;
 		}
-		if (string.IsNullOrEmpty(((BaseItem)item).Overview))
+		if (string.IsNullOrEmpty(item.Overview))
 		{
-			((BaseItem)item).Overview = response.overview;
+			item.Overview = response.overview;
 		}
 		if (!isFirstLanguage)
 		{
 			return;
 		}
-		if (((BaseItem)item).RemoteTrailers.Length == 0 && response.videos != null && response.videos.results != null)
+		if (item.RemoteTrailers.Length == 0 && response.videos != null && response.videos.results != null)
 		{
 			foreach (TmdbVideo result3 in response.videos.results)
 			{
 				if (string.Equals(result3.type, "trailer", StringComparison.OrdinalIgnoreCase) && string.Equals(result3.site, "youtube", StringComparison.OrdinalIgnoreCase))
 				{
-					string text = $"http://www.youtube.com/watch?v={result3.key}";
-					Extensions.AddTrailerUrl((BaseItem)(object)item, text);
+					string text = "http://www.youtube.com/watch?v=" + result3.key;
+					item.AddTrailerUrl(text);
 				}
 			}
 		}
-		((BaseItem)item).IndexNumber = ((ItemLookupInfo)info).IndexNumber;
-		((BaseItem)item).ParentIndexNumber = ((ItemLookupInfo)info).ParentIndexNumber;
+		item.IndexNumber = info.IndexNumber;
+		item.ParentIndexNumber = info.ParentIndexNumber;
 		item.IndexNumberEnd = info.IndexNumberEnd;
 		if (response.external_ids != null)
 		{
 			if (response.external_ids.tvdb_id > 0)
 			{
-				ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)item, (MetadataProviders)4, response.external_ids.tvdb_id.Value.ToString(CultureInfo.InvariantCulture));
+				item.SetProviderId(MetadataProviders.Tvdb, response.external_ids.tvdb_id.Value.ToString(CultureInfo.InvariantCulture));
 			}
 			if (response.external_ids.tvrage_id > 0)
 			{
-				ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)item, (MetadataProviders)15, response.external_ids.tvrage_id.Value.ToString(CultureInfo.InvariantCulture));
+				item.SetProviderId(MetadataProviders.TvRage, response.external_ids.tvrage_id.Value.ToString(CultureInfo.InvariantCulture));
 			}
 			if (!string.IsNullOrEmpty(response.external_ids.imdb_id) && !string.Equals(response.external_ids.imdb_id, "0", StringComparison.OrdinalIgnoreCase))
 			{
-				ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)item, (MetadataProviders)2, response.external_ids.imdb_id);
+				item.SetProviderId(MetadataProviders.Imdb, response.external_ids.imdb_id);
 			}
 		}
-		((BaseItem)item).PremiereDate = response.air_date;
-		((BaseItem)item).ProductionYear = ((BaseItem)item).PremiereDate.Value.Year;
-		((BaseItem)item).CommunityRating = (float)response.vote_average;
+		item.PremiereDate = response.air_date;
+		item.ProductionYear = item.PremiereDate.Value.Year;
+		item.CommunityRating = (float)response.vote_average;
 		string imageUrl = settings.images.GetImageUrl("original");
-		((BaseMetadataResult)result).ResetPeople();
+		result.ResetPeople();
 		TmdbCredits credits = response.credits;
 		if (credits == null)
 		{
@@ -183,7 +185,7 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 				{
 					Name = item2.name.Trim(),
 					Role = item2.character,
-					Type = (PersonType)0
+					Type = PersonType.Actor
 				};
 				if (!string.IsNullOrWhiteSpace(item2.profile_path))
 				{
@@ -191,9 +193,9 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 				}
 				if (item2.id > 0)
 				{
-					ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)val, (MetadataProviders)3, item2.id.ToString(CultureInfo.InvariantCulture));
+					val.SetProviderId(MetadataProviders.Tmdb, item2.id.ToString(CultureInfo.InvariantCulture));
 				}
-				((BaseMetadataResult)result).AddPerson(val);
+				result.AddPerson(val);
 			}
 		}
 		if (credits.guest_stars != null)
@@ -204,7 +206,7 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 				{
 					Name = item3.name.Trim(),
 					Role = item3.character,
-					Type = (PersonType)4
+					Type = PersonType.GuestStar
 				};
 				if (!string.IsNullOrWhiteSpace(item3.profile_path))
 				{
@@ -212,25 +214,25 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 				}
 				if (item3.id > 0)
 				{
-					ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)val2, (MetadataProviders)3, item3.id.ToString(CultureInfo.InvariantCulture));
+					val2.SetProviderId(MetadataProviders.Tmdb, item3.id.ToString(CultureInfo.InvariantCulture));
 				}
-				((BaseMetadataResult)result).AddPerson(val2);
+				result.AddPerson(val2);
 			}
 		}
 		if (credits.crew == null)
 		{
 			return;
 		}
-		PersonType[] source = (PersonType[])(object)new PersonType[1] { (PersonType)1 };
+		PersonType[] source = new PersonType[1] { PersonType.Director };
 		foreach (TmdbCrew item4 in credits.crew)
 		{
-			PersonType val3 = (PersonType)7;
+			PersonType val3 = PersonType.Lyricist;
 			string department = item4.department;
 			if (string.Equals(department, "writing", StringComparison.OrdinalIgnoreCase))
 			{
-				val3 = (PersonType)2;
+				val3 = PersonType.Writer;
 			}
-			if (Enum.TryParse<PersonType>(department, ignoreCase: true, out PersonType result2))
+			if (Enum.TryParse<PersonType>(department, ignoreCase: true, out var result2))
 			{
 				val3 = result2;
 			}
@@ -240,7 +242,7 @@ public class MovieDbEpisodeProvider : MovieDbProviderBase, IRemoteMetadataProvid
 			}
 			if (source.Contains(val3))
 			{
-				((BaseMetadataResult)result).AddPerson(new PersonInfo
+				result.AddPerson(new PersonInfo
 				{
 					Name = item4.name.Trim(),
 					Role = item4.job,

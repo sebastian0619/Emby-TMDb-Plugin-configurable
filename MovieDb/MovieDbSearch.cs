@@ -134,30 +134,9 @@ public class MovieDbSearch
 		_libraryManager = libraryManager;
 	}
 
-	public async Task<List<RemoteSearchResult>> GetSearchResults(
-		SeriesInfo idInfo, 
-		string[] tmdbLanguages, 
-		CancellationToken cancellationToken)
+	public Task<List<RemoteSearchResult>> GetSearchResults(SeriesInfo idInfo, string[] tmdbLanguages, TmdbSettingsResult tmdbSettings, CancellationToken cancellationToken)
 	{
-		var name = idInfo.Name;
-		var year = idInfo.Year;
-		
-		if (string.IsNullOrEmpty(name))
-		{
-			return new List<RemoteSearchResult>();
-		}
-
-		var config = Plugin.Instance.Configuration;
-		string imageUrl = config.GetImageUrl("original");
-
-		return await GetSearchResultsTv(
-			name,
-			year,
-			tmdbLanguages?.FirstOrDefault(),
-			idInfo.EnableAdultMetadata,
-			imageUrl,
-			cancellationToken)
-			.ConfigureAwait(false);
+		return GetSearchResults(idInfo, tmdbLanguages, "tv", tmdbSettings, cancellationToken);
 	}
 
 	public Task<List<RemoteSearchResult>> GetMovieSearchResults(ItemLookupInfo idInfo, string[] tmdbLanguages, TmdbSettingsResult tmdbSettings, CancellationToken cancellationToken)
@@ -177,7 +156,7 @@ public class MovieDbSearch
 		{
 			return new List<RemoteSearchResult>();
 		}
-		_logger.Info("MovieDbProvider: Finding id for item: " + name, Array.Empty<object>());
+		_logger.Info("MovieDbProvider: Finding id for item: " + name);
 		foreach (string tmdbLanguage in tmdbLanguages)
 		{
 			List<RemoteSearchResult> list = await GetSearchResults(idInfo, searchType, tmdbLanguage, tmdbSettings, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
@@ -272,16 +251,14 @@ public class MovieDbSearch
 
 	public async Task<RemoteSearchResult> FindMovieByExternalId(string id, string externalSource, string providerIdKey, CancellationToken cancellationToken)
 	{
-		var config = Plugin.Instance!.Configuration;
-		string url = $"{config.TmdbApiBaseUrl.TrimEnd('/')}/3/find/{id}?api_key={config.ApiKey}&external_source={externalSource}";
-		
-		HttpResponseInfo response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions
+		PluginOptions config = Plugin.Instance.Configuration;
+		string url = config.TmdbApiBaseUrl.TrimEnd(new char[1] { '/' }) + "/3/find/" + id + "?api_key=" + config.ApiKey + "&external_source=" + externalSource;
+		using (HttpResponseInfo response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions
 		{
 			Url = url,
 			CancellationToken = cancellationToken,
 			AcceptHeader = MovieDbProviderBase.AcceptHeader
-		}).ConfigureAwait(continueOnCapturedContext: false);
-		try
+		}).ConfigureAwait(continueOnCapturedContext: false))
 		{
 			using Stream json = response.Content;
 			ExternalIdLookupResult externalIdLookupResult = await _json.DeserializeFromStreamAsync<ExternalIdLookupResult>(json).ConfigureAwait(continueOnCapturedContext: false);
@@ -290,14 +267,10 @@ public class MovieDbSearch
 				TmdbMovieSearchResult tv = externalIdLookupResult.movie_results.FirstOrDefault();
 				if (tv != null)
 				{
-					string imageUrl = config.GetImageUrl("original");
+					string imageUrl = (await MovieDbProvider.Current.GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).images.GetImageUrl("original");
 					return ParseMovieSearchResult(tv, imageUrl);
 				}
 			}
-		}
-		finally
-		{
-			((IDisposable)response)?.Dispose();
 		}
 		return null;
 	}
@@ -308,9 +281,8 @@ public class MovieDbSearch
 		{
 			throw new ArgumentException("name");
 		}
-
-		var config = Plugin.Instance!.Configuration;
-		string text = $"{config.TmdbApiBaseUrl.TrimEnd('/')}/3/search/{type}?api_key={config.ApiKey}&query={WebUtility.UrlEncode(name)}&language={tmdbLanguage}";
+		PluginOptions config = Plugin.Instance.Configuration;
+		string text = config.TmdbApiBaseUrl.TrimEnd(new char[1] { '/' }) + "/3/search/" + type + "?api_key=" + config.ApiKey + "&query=" + WebUtility.UrlEncode(name) + "&language=" + tmdbLanguage;
 		if (includeAdult)
 		{
 			text += "&include_adult=true";
@@ -320,33 +292,21 @@ public class MovieDbSearch
 		{
 			text = text + "&year=" + year.Value.ToString(CultureInfo.InvariantCulture);
 		}
-		HttpResponseInfo response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions
+		using HttpResponseInfo response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions
 		{
 			Url = text,
 			CancellationToken = cancellationToken,
 			AcceptHeader = MovieDbProviderBase.AcceptHeader
 		}).ConfigureAwait(continueOnCapturedContext: false);
-		try
-		{
-			using Stream json = response.Content;
-			return (from i in (await _json.DeserializeFromStreamAsync<TmdbMovieSearchResults>(json).ConfigureAwait(continueOnCapturedContext: false)).results ?? new List<TmdbMovieSearchResult>()
-				select ParseMovieSearchResult(i, baseImageUrl) into i
-				where !year.HasValue || !i.ProductionYear.HasValue || !enableOneYearTolerance || Math.Abs(year.Value - i.ProductionYear.Value) <= 1
-				select i).ToList();
-		}
-		finally
-		{
-			((IDisposable)response)?.Dispose();
-		}
+		using Stream json = response.Content;
+		return (from i in (await _json.DeserializeFromStreamAsync<TmdbMovieSearchResults>(json).ConfigureAwait(continueOnCapturedContext: false)).results ?? new List<TmdbMovieSearchResult>()
+			select ParseMovieSearchResult(i, baseImageUrl) into i
+			where !year.HasValue || !i.ProductionYear.HasValue || !enableOneYearTolerance || Math.Abs(year.Value - i.ProductionYear.Value) <= 1
+			select i).ToList();
 	}
 
 	private RemoteSearchResult ParseMovieSearchResult(TmdbMovieSearchResult i, string baseImageUrl)
 	{
-		//IL_0000: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0005: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0015: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0021: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0044: Expected O, but got Unknown
 		RemoteSearchResult val = new RemoteSearchResult
 		{
 			SearchProviderName = MovieDbProvider.Current.Name,
@@ -358,7 +318,7 @@ public class MovieDbSearch
 			val.PremiereDate = result.ToUniversalTime();
 			val.ProductionYear = val.PremiereDate.Value.Year;
 		}
-		ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)val, (MetadataProviders)3, i.id.ToString(CultureInfo.InvariantCulture));
+		val.SetProviderId(MetadataProviders.Tmdb, i.id.ToString(CultureInfo.InvariantCulture));
 		return val;
 	}
 
@@ -368,9 +328,8 @@ public class MovieDbSearch
 		{
 			throw new ArgumentException("name");
 		}
-
-		var config = Plugin.Instance!.Configuration;
-		string text = $"{config.TmdbApiBaseUrl.TrimEnd('/')}/3/search/tv?api_key={config.ApiKey}&query={WebUtility.UrlEncode(name)}&language={language}";
+		PluginOptions config = Plugin.Instance.Configuration;
+		string text = config.TmdbApiBaseUrl.TrimEnd(new char[1] { '/' }) + "/3/search/tv?api_key=" + config.ApiKey + "&query=" + WebUtility.UrlEncode(name) + "&language=" + language;
 		if (year.HasValue)
 		{
 			text = text + "&first_air_date_year=" + year.Value.ToString(CultureInfo.InvariantCulture);
@@ -379,26 +338,18 @@ public class MovieDbSearch
 		{
 			text += "&include_adult=true";
 		}
-		HttpResponseInfo response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions
+		using HttpResponseInfo response = await MovieDbProvider.Current.GetMovieDbResponse(new HttpRequestOptions
 		{
 			Url = text,
 			CancellationToken = cancellationToken,
 			AcceptHeader = MovieDbProviderBase.AcceptHeader
 		}).ConfigureAwait(continueOnCapturedContext: false);
-		try
-		{
-			using Stream json = response.Content;
-			return ((await _json.DeserializeFromStreamAsync<TmdbTvSearchResults>(json).ConfigureAwait(continueOnCapturedContext: false)).results ?? new List<TvResult>()).Select((TvResult i) => ToRemoteSearchResult(i, baseImageUrl)).ToList();
-		}
-		finally
-		{
-			((IDisposable)response)?.Dispose();
-		}
+		using Stream json = response.Content;
+		return ((await _json.DeserializeFromStreamAsync<TmdbTvSearchResults>(json).ConfigureAwait(continueOnCapturedContext: false)).results ?? new List<TvResult>()).Select((TvResult i) => ToRemoteSearchResult(i, baseImageUrl)).ToList();
 	}
 
 	public static RemoteSearchResult ToRemoteSearchResult(TvResult i, string baseImageUrl)
 	{
-
 		RemoteSearchResult val = new RemoteSearchResult
 		{
 			SearchProviderName = MovieDbProvider.Current.Name,
@@ -410,7 +361,7 @@ public class MovieDbSearch
 			val.PremiereDate = result.ToUniversalTime();
 			val.ProductionYear = val.PremiereDate.Value.Year;
 		}
-		ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)val, (MetadataProviders)3, i.id.ToString(CultureInfo.InvariantCulture));
+		val.SetProviderId(MetadataProviders.Tmdb, i.id.ToString(CultureInfo.InvariantCulture));
 		return val;
 	}
 }

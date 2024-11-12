@@ -12,20 +12,13 @@ public class MovieDbMovieExternalId : IExternalId
 
 	public string Name => Plugin.StaticName;
 
-	public string Key
-	{
-		get
-		{
-			//IL_0001: Unknown result type (might be due to invalid IL or missing references)
-			return MetadataProviders.Tmdb.ToString();
-		}
-	}
+	public string Key => MetadataProviders.Tmdb.ToString();
 
 	public string UrlFormatString => "https://tmdbhome.kingscross.online:8333/movie/{0}";
 
 	public bool Supports(IHasProviderIds item)
 	{
-		LiveTvProgram val = (LiveTvProgram)(object)((item is LiveTvProgram) ? item : null);
+		LiveTvProgram val = (LiveTvProgram)((item is LiveTvProgram) ? item : null);
 		if (val != null && val.IsMovie)
 		{
 			return true;

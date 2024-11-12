@@ -101,6 +101,14 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		public TmdbExternalIds external_ids { get; set; }
 	}
 
+	private const string PersonSearchPath = "3/search/person";
+
+	private const string PersonFindPath = "3/find/{0}";
+
+	private const string PersonMetadataPath = "3/person/{0}";
+
+	private const string AppendToResponse = "credits,images,external_ids";
+
 	internal static MovieDbPersonProvider Current { get; private set; }
 
 	public MovieDbPersonProvider(IJsonSerializer jsonSerializer, IHttpClient httpClient, IFileSystem fileSystem, IServerConfigurationManager configurationManager, ILogManager logManager, ILocalizationManager localization, IServerApplicationHost appHost, ILibraryManager libraryManager)
@@ -109,109 +117,66 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		Current = this;
 	}
 
-	// 定义 API 路径模板
-	private const string PersonSearchPath = "3/search/person";
-	private const string PersonFindPath = "3/find/{0}";
-	private const string PersonMetadataPath = "3/person/{0}";
-	private const string AppendToResponse = "credits,images,external_ids";
-
 	public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(PersonLookupInfo searchInfo, CancellationToken cancellationToken)
 	{
-		string tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)searchInfo, MetadataProviders.Tmdb);
-		string tmdbImageUrl = (await GetTmdbSettings(cancellationToken).ConfigureAwait(false)).images.GetImageUrl("original");
-
+		string tmdbId = searchInfo.GetProviderId(MetadataProviders.Tmdb);
+		string tmdbImageUrl = (await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).images.GetImageUrl("original");
 		if (!string.IsNullOrEmpty(tmdbId))
 		{
 			DirectoryService directoryService = new DirectoryService(FileSystem);
 			MetadataResult<Person> val = await GetMetadata(new RemoteMetadataFetchOptions<PersonLookupInfo>
 			{
 				SearchInfo = searchInfo,
-				DirectoryService = (IDirectoryService)(object)directoryService
+				DirectoryService = directoryService
 			}, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-			if (!((BaseMetadataResult)val).HasMetadata)
+			if (!val.HasMetadata)
 			{
 				return new List<RemoteSearchResult>();
 			}
-			RemoteSearchResult result = ((BaseMetadataResult)val).ToRemoteSearchResult(base.Name);
-			List<TmdbImage> images = ((await EnsurePersonInfo(tmdbId, null, (IDirectoryService)(object)directoryService, cancellationToken).ConfigureAwait(continueOnCapturedContext: false))?.images ?? new Images()).profiles ?? new List<TmdbImage>();
+			RemoteSearchResult result = val.ToRemoteSearchResult(base.Name);
+			List<TmdbImage> images = ((await EnsurePersonInfo(tmdbId, null, directoryService, cancellationToken).ConfigureAwait(continueOnCapturedContext: false))?.images ?? new Images()).profiles ?? new List<TmdbImage>();
 			await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 			result.ImageUrl = ((images.Count == 0) ? null : (tmdbImageUrl + images[0].file_path));
-			return (IEnumerable<RemoteSearchResult>)(object)new RemoteSearchResult[1] { result };
+			return new RemoteSearchResult[1] { result };
 		}
-
-		string providerId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)searchInfo, MetadataProviders.Imdb);
-		HttpResponseInfo response;
-
+		string providerId = searchInfo.GetProviderId(MetadataProviders.Imdb);
 		if (!string.IsNullOrEmpty(providerId))
 		{
-			string path = string.Format(PersonFindPath, providerId);
+			string path = $"3/find/{providerId}";
 			string apiUrl = GetApiUrl(path) + "&external_source=imdb_id";
-			
-			response = await GetMovieDbResponse(new HttpRequestOptions
+			using HttpResponseInfo httpResponseInfo = await GetMovieDbResponse(new HttpRequestOptions
 			{
 				Url = apiUrl,
 				CancellationToken = cancellationToken,
-				AcceptHeader = AcceptHeader
-			}).ConfigureAwait(false);
-
-			try
-			{
-				using (Stream stream = response.Content)
-				{
-					return (await JsonSerializer.DeserializeFromStreamAsync<GeneralSearchResults>(stream).ConfigureAwait(false) ?? new GeneralSearchResults())
-						.person_results.Select(i => GetSearchResult(i, tmdbImageUrl));
-				}
-			}
-			finally
-			{
-				((IDisposable)response)?.Dispose();
-			}
+				AcceptHeader = MovieDbProviderBase.AcceptHeader
+			}).ConfigureAwait(continueOnCapturedContext: false);
+			using Stream stream2 = httpResponseInfo.Content;
+			return ((await JsonSerializer.DeserializeFromStreamAsync<GeneralSearchResults>(stream2).ConfigureAwait(continueOnCapturedContext: false)) ?? new GeneralSearchResults()).person_results.Select((PersonSearchResult i) => GetSearchResult(i, tmdbImageUrl));
 		}
-
 		if (searchInfo.IsAutomated)
 		{
 			return new List<RemoteSearchResult>();
 		}
-
-		string url = GetApiUrl(PersonSearchPath) + $"&query={WebUtility.UrlEncode(searchInfo.Name)}";
-		
-		response = await GetMovieDbResponse(new HttpRequestOptions
+		string url = GetApiUrl("3/search/person") + "&query=" + WebUtility.UrlEncode(searchInfo.Name);
+		using HttpResponseInfo httpResponseInfo = await GetMovieDbResponse(new HttpRequestOptions
 		{
 			Url = url,
 			CancellationToken = cancellationToken,
-			AcceptHeader = AcceptHeader
-		}).ConfigureAwait(false);
-
-		try
-		{
-			using (Stream stream = response.Content)
-			{
-				return (await JsonSerializer.DeserializeFromStreamAsync<PersonSearchResults>(stream).ConfigureAwait(false) ?? new PersonSearchResults())
-					.Results.Select(i => GetSearchResult(i, tmdbImageUrl));
-			}
-		}
-		finally
-		{
-			((IDisposable)response)?.Dispose();
-		}
+			AcceptHeader = MovieDbProviderBase.AcceptHeader
+		}).ConfigureAwait(continueOnCapturedContext: false);
+		using Stream stream = httpResponseInfo.Content;
+		return ((await JsonSerializer.DeserializeFromStreamAsync<PersonSearchResults>(stream).ConfigureAwait(continueOnCapturedContext: false)) ?? new PersonSearchResults()).Results.Select((PersonSearchResult i) => GetSearchResult(i, tmdbImageUrl));
 	}
 
 	private RemoteSearchResult GetSearchResult(PersonSearchResult i, string baseImageUrl)
 	{
-		//IL_0000: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0005: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0011: Unknown result type (might be due to invalid IL or missing references)
-		//IL_001d: Unknown result type (might be due to invalid IL or missing references)
-		//IL_003f: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0059: Expected O, but got Unknown
-		//IL_005a: Expected O, but got Unknown
 		RemoteSearchResult val = new RemoteSearchResult
 		{
 			SearchProviderName = base.Name,
 			Name = i.Name,
 			ImageUrl = (string.IsNullOrEmpty(i.Profile_Path) ? null : (baseImageUrl + i.Profile_Path))
 		};
-		ProviderIdsExtensions.SetProviderId((IHasProviderIds)val, (MetadataProviders)3, i.Id.ToString(CultureInfo.InvariantCulture));
+		val.SetProviderId(MetadataProviders.Tmdb, i.Id.ToString(CultureInfo.InvariantCulture));
 		return val;
 	}
 
@@ -219,18 +184,20 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 	{
 		PersonLookupInfo id = options.SearchInfo;
 		IDirectoryService directoryService = options.DirectoryService;
-		string tmdbId = ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)id, (MetadataProviders)3);
+		string tmdbId = id.GetProviderId(MetadataProviders.Tmdb);
 		if (string.IsNullOrEmpty(tmdbId))
 		{
 			tmdbId = await GetTmdbId(id, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
 		}
 		MetadataResult<Person> result = new MetadataResult<Person>();
-		string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages((ItemLookupInfo)(object)id, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
+		ItemLookupInfo searchInfo = id;
+		string[] movieDbMetadataLanguages = GetMovieDbMetadataLanguages(searchInfo, await GetTmdbLanguages(cancellationToken).ConfigureAwait(continueOnCapturedContext: false));
 		if (!string.IsNullOrEmpty(tmdbId))
 		{
 			bool isFirstLanguage = true;
 			string[] array = movieDbMetadataLanguages;
-			foreach (string language in array)
+			string[] array2 = array;
+			foreach (string language in array2)
 			{
 				PersonResult personResult;
 				try
@@ -248,7 +215,7 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 				}
 				if (personResult != null)
 				{
-					((BaseMetadataResult)result).HasMetadata = true;
+					result.HasMetadata = true;
 					if (result.Item == null)
 					{
 						result.Item = new Person();
@@ -267,7 +234,7 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	private bool IsComplete(Person item)
 	{
-		if (string.IsNullOrEmpty(((BaseItem)item).Overview))
+		if (string.IsNullOrEmpty(item.Overview))
 		{
 			return false;
 		}
@@ -276,32 +243,32 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	private void ImportData(Person item, PersonResult info, bool isFirstLanguage)
 	{
-		if (string.IsNullOrEmpty(((BaseItem)item).Name))
+		if (string.IsNullOrEmpty(item.Name))
 		{
-			((BaseItem)item).Name = info.name;
+			item.Name = info.name;
 		}
-		if (string.IsNullOrEmpty(((BaseItem)item).Overview))
+		if (string.IsNullOrEmpty(item.Overview))
 		{
-			((BaseItem)item).Overview = info.biography;
+			item.Overview = info.biography;
 		}
 		if (isFirstLanguage)
 		{
 			if (!string.IsNullOrWhiteSpace(info.place_of_birth))
 			{
-				((BaseItem)item).ProductionLocations = new string[1] { info.place_of_birth };
+				item.ProductionLocations = new string[1] { info.place_of_birth };
 			}
 			if (DateTimeOffset.TryParseExact(info.birthday, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
 			{
-				((BaseItem)item).PremiereDate = result.ToUniversalTime();
+				item.PremiereDate = result.ToUniversalTime();
 			}
 			if (DateTimeOffset.TryParseExact(info.deathday, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result2))
 			{
-				((BaseItem)item).EndDate = result2.ToUniversalTime();
+				item.EndDate = result2.ToUniversalTime();
 			}
-			ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)item, (MetadataProviders)3, info.id.ToString(CultureInfo.InvariantCulture));
+			item.SetProviderId(MetadataProviders.Tmdb, info.id.ToString(CultureInfo.InvariantCulture));
 			if (!string.IsNullOrEmpty(info.imdb_id))
 			{
-				ProviderIdsExtensions.SetProviderId((IHasProviderIds)(object)item, (MetadataProviders)2, info.imdb_id);
+				item.SetProviderId(MetadataProviders.Imdb, info.imdb_id);
 			}
 		}
 	}
@@ -313,16 +280,16 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	private async Task<string> GetTmdbId(PersonLookupInfo info, CancellationToken cancellationToken)
 	{
-		return (await GetSearchResults(info, cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).Select((RemoteSearchResult i) => ProviderIdsExtensions.GetProviderId((IHasProviderIds)(object)i, (MetadataProviders)3)).FirstOrDefault();
+		return (await GetSearchResults(info, cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).Select((RemoteSearchResult i) => i.GetProviderId(MetadataProviders.Tmdb)).FirstOrDefault();
 	}
 
 	internal async Task<PersonResult> EnsurePersonInfo(string id, string language, IDirectoryService directoryService, CancellationToken cancellationToken)
 	{
 		string cacheKey = "tmdb_person_" + id + "_" + language;
-		PersonResult personResult = default(PersonResult);
+		PersonResult personResult = null;
 		if (!directoryService.TryGetFromCache<PersonResult>(cacheKey, out personResult))
 		{
-			string dataFilePath = GetPersonDataFilePath((IApplicationPaths)(object)ConfigurationManager.ApplicationPaths, id, language);
+			string dataFilePath = GetPersonDataFilePath(ConfigurationManager.ApplicationPaths, id, language);
 			FileSystemMetadata fileSystemInfo = FileSystem.GetFileSystemInfo(dataFilePath);
 			if (fileSystemInfo.Exists && DateTimeOffset.UtcNow - FileSystem.GetLastWriteTimeUtc(fileSystemInfo) <= MovieDbProviderBase.CacheTime)
 			{
@@ -332,52 +299,40 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 			{
 				FileSystem.CreateDirectory(FileSystem.GetDirectoryName(dataFilePath));
 				personResult = await FetchPersonResult(id, language, cancellationToken).ConfigureAwait(continueOnCapturedContext: false);
-				using Stream stream = FileSystem.GetFileStream(dataFilePath, (FileOpenMode)2, (FileAccessMode)2, (FileShareMode)1, false);
-				JsonSerializer.SerializeToStream((object)personResult, stream);
+				using Stream stream = FileSystem.GetFileStream(dataFilePath, FileOpenMode.Create, FileAccessMode.Write, FileShareMode.Read);
+				JsonSerializer.SerializeToStream(personResult, stream);
 			}
-			directoryService.AddOrUpdateCache(cacheKey, (object)personResult);
+			directoryService.AddOrUpdateCache(cacheKey, personResult);
 		}
 		return personResult;
 	}
 
 	private string GetPersonMetadataUrl(string id)
 	{
-		string path = string.Format(PersonMetadataPath, id);
-		return GetApiUrl(path) + $"&append_to_response={AppendToResponse}";
+		string path = $"3/person/{id}";
+		return GetApiUrl(path) + "&append_to_response=credits,images,external_ids";
 	}
 
 	private async Task<PersonResult> FetchPersonResult(string id, string language, CancellationToken cancellationToken)
 	{
 		string url = GetPersonMetadataUrl(id);
-		
 		if (!string.IsNullOrEmpty(language))
 		{
-			url += $"&language={language}";
+			url = url + "&language=" + language;
 		}
-
-		var response = await GetMovieDbResponse(new HttpRequestOptions
+		using HttpResponseInfo response = await GetMovieDbResponse(new HttpRequestOptions
 		{
 			Url = url,
 			CancellationToken = cancellationToken,
-			AcceptHeader = AcceptHeader
-		}).ConfigureAwait(false);
-
-		try
-		{
-			using (Stream json = response.Content)
-			{
-				return await JsonSerializer.DeserializeFromStreamAsync<PersonResult>(json).ConfigureAwait(false);
-			}
-		}
-		finally
-		{
-			((IDisposable)response)?.Dispose();
-		}
+			AcceptHeader = MovieDbProviderBase.AcceptHeader
+		}).ConfigureAwait(continueOnCapturedContext: false);
+		using Stream json = response.Content;
+		return await JsonSerializer.DeserializeFromStreamAsync<PersonResult>(json).ConfigureAwait(continueOnCapturedContext: false);
 	}
 
 	private static string GetPersonDataPath(IApplicationPaths appPaths, string tmdbId)
 	{
-		string path = BaseExtensions.GetMD5(tmdbId).ToString().Substring(0, 1);
+		string path = tmdbId.GetMD5().ToString().Substring(0, 1);
 		return Path.Combine(GetPersonsDataPath(appPaths), path, tmdbId);
 	}
 
@@ -397,11 +352,10 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		return Path.Combine(appPaths.CachePath, "tmdb-people");
 	}
 
-	// 添加 new 关键字来显式隐藏基类的 GetApiUrl 方法
 	private new string GetApiUrl(string path)
 	{
-		var config = GetConfiguration();
-		var baseUrl = config.TmdbApiBaseUrl.TrimEnd('/');
-		return $"{baseUrl}/{path}?api_key={config.ApiKey}";
+		PluginOptions config = GetConfiguration();
+		string baseUrl = config.TmdbApiBaseUrl.TrimEnd(new char[1] { '/' });
+		return baseUrl + "/" + path + "?api_key=" + config.ApiKey;
 	}
 }

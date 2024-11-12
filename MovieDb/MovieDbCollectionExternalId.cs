@@ -8,15 +8,9 @@ public class MovieDbCollectionExternalId : IExternalId
 {
 	public string Name => Plugin.StaticName;
 
-	public string Key
-	{
-		get
-		{
-			return MetadataProviders.Tmdb.ToString();
-		}
-	}
+	public string Key => MetadataProviders.Tmdb.ToString();
 
-	public string UrlFormatString => $"{Plugin.Instance.Configuration.TmdbHomeUrl}/collection/{{0}}";
+	public string UrlFormatString => Plugin.Instance.Configuration.TmdbHomeUrl + "/collection/{0}";
 
 	public bool Supports(IHasProviderIds item)
 	{

@@ -14,20 +14,20 @@ public class MovieDbMusicVideoProvider : IRemoteMetadataProvider<MusicVideo, Mus
 {
 	public string Name => MovieDbProvider.Current.Name;
 
-	public MetadataFeatures[] Features => (MetadataFeatures[])(object)new MetadataFeatures[2]
+	public MetadataFeatures[] Features => new MetadataFeatures[2]
 	{
-		(MetadataFeatures)2,
-		(MetadataFeatures)1
+		MetadataFeatures.Adult,
+		MetadataFeatures.Collections
 	};
 
 	public Task<MetadataResult<MusicVideo>> GetMetadata(MusicVideoInfo info, CancellationToken cancellationToken)
 	{
-		return MovieDbProvider.Current.GetItemMetadata<MusicVideo>((ItemLookupInfo)(object)info, cancellationToken);
+		return MovieDbProvider.Current.GetItemMetadata<MusicVideo>(info, cancellationToken);
 	}
 
 	public Task<IEnumerable<RemoteSearchResult>> GetSearchResults(MusicVideoInfo searchInfo, CancellationToken cancellationToken)
 	{
-		return MovieDbProvider.Current.GetMovieSearchResults((ItemLookupInfo)(object)searchInfo, cancellationToken);
+		return MovieDbProvider.Current.GetMovieSearchResults(searchInfo, cancellationToken);
 	}
 
 	public Task<HttpResponseInfo> GetImageResponse(string url, CancellationToken cancellationToken)
