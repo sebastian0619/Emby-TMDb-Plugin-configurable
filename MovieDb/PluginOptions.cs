@@ -32,9 +32,16 @@ public class PluginOptions : EditableOptionsBase
 
 
 	[DisplayName("API Key")]
-	[Description("TMDB API 密钥，默认值为EMBY官方插件的原值")]
-	public string ApiKey { get; set; } = "f6bd687ffa63cd282b6ff2c6877f2669";
+	[Description("TMDB API 密钥，如不填写则使用Emby官方插件默认值")]
+	public string ApiKey { get; set; }
 
+	// 添加一个内部方法来获取实际使用的API Key
+	public string GetEffectiveApiKey()
+	{
+		return string.IsNullOrWhiteSpace(ApiKey) 
+			? "f6bd687ffa63cd282b6ff2c6877f2669"  // 默认值
+			: ApiKey;
+	}
 
 	public string GetImageUrl(string size)
 	{
@@ -47,10 +54,6 @@ public class PluginOptions : EditableOptionsBase
 
 	public new bool Validate()
 	{
-		if (string.IsNullOrWhiteSpace(ApiKey))
-		{
-			return false;
-		}
 		if (string.IsNullOrWhiteSpace(TmdbApiBaseUrl) || string.IsNullOrWhiteSpace(TmdbImageBaseUrl) || string.IsNullOrWhiteSpace(TmdbHomeUrl))
 		{
 			return false;
