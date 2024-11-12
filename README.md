@@ -30,6 +30,9 @@
    - 默认值为EMBY官方插件的API密钥
    - 可以配置为自己申请的TMDB API密钥
 
+![image](https://github.com/user-attachments/assets/d7d07179-430e-4527-9011-47c1099f41bf)
+![image](https://github.com/user-attachments/assets/24c167ac-ee54-41c4-8a08-50786f41d8d0)
+
 ## 📥 安装方法
 
 1. 下载发布页面的最新版本插件
