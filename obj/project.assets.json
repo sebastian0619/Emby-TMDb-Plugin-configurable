@@ -423,13 +423,13 @@
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
   },
   "project": {
-    "version": "2.0.0",
+    "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
+      "projectUniqueName": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
       "projectName": "MovieDb",
-      "projectPath": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
+      "projectPath": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
       "packagesPath": "C:\\Users\\Sebas\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\obj\\",
+      "outputPath": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

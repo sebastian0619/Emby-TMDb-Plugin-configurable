@@ -5,7 +5,7 @@
   },
   "projects": {
     "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj": {
-      "version": "2.0.0",
+      "version": "1.0.0",
       "restore": {
         "projectUniqueName": "c:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
         "projectName": "MovieDb",

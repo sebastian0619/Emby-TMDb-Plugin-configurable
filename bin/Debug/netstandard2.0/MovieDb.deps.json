@@ -7,7 +7,7 @@
   "targets": {
     ".NETStandard,Version=v2.0": {},
     ".NETStandard,Version=v2.0/": {
-      "MovieDb/2.0.0": {
+      "MovieDb/1.0.0": {
         "dependencies": {
           "MediaBrowser.Common": "4.8.10",
           "NETStandard.Library": "2.0.3",
@@ -92,7 +92,7 @@
     }
   },
   "libraries": {
-    "MovieDb/2.0.0": {
+    "MovieDb/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

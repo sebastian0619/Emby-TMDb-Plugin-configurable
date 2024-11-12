@@ -17,8 +17,8 @@ public class PluginOptions : EditableOptionsBase
 	public override string EditorTitle => "TMDB 插件配置";
 
 	[DisplayName("TMDB API 基础URL")]
-	[Description("TMDB API 的基础 URL 地址，默认：https://api.themoviedb.org/3")]
-	public string TmdbApiBaseUrl { get; set; } = "https://api.themoviedb.org/3";
+	[Description("TMDB API 的基础 URL 地址，默认：https://api.themoviedb.org")]
+	public string TmdbApiBaseUrl { get; set; } = "https://api.themoviedb.org";
 
 
 	[DisplayName("TMDB 图片基础URL")]
@@ -61,7 +61,7 @@ public class PluginOptions : EditableOptionsBase
 
 	public void ResetToDefaults()
 	{
-		TmdbApiBaseUrl = "https://api.themoviedb.org/3";
+		TmdbApiBaseUrl = "https://api.themoviedb.org";
 		TmdbImageBaseUrl = "https://image.tmdb.org/t/p";
 		TmdbHomeUrl = "https://www.themoviedb.org";
 		ApiKey = string.Empty;
