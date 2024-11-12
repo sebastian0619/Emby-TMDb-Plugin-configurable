@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>10.0</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>MovieDb</AssemblyName>
+    <ApplicationVersion>2.0.0.0</ApplicationVersion>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Version>2.0.0</Version>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="MovieDb.thumb.png" />
+    <EmbeddedResource Include="MovieDb.thumb.png" LogicalName="MovieDb.thumb.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="MediaBrowser.Common">
+      <HintPath>.\MediaBrowser.Common.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="MediaBrowser.Controller">
+      <HintPath>.\MediaBrowser.Controller.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="MediaBrowser.Model">
+      <HintPath>.\MediaBrowser.Model.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="MediaBrowser.Common" Version="4.8.10" />
+  </ItemGroup>
+
+  <!-- 添加程序集绑定重定向 -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.TypeForwardedTo">
+      <_Parameter1>System.Memory</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!-- 或者尝试添加运行时绑定重定向 -->
+  <PropertyGroup>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+</Project>
