@@ -198,20 +198,14 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	private RemoteSearchResult GetSearchResult(PersonSearchResult i, string baseImageUrl)
 	{
-		//IL_0000: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0005: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0011: Unknown result type (might be due to invalid IL or missing references)
-		//IL_001d: Unknown result type (might be due to invalid IL or missing references)
-		//IL_003f: Unknown result type (might be due to invalid IL or missing references)
-		//IL_0059: Expected O, but got Unknown
-		//IL_005a: Expected O, but got Unknown
+
 		RemoteSearchResult val = new RemoteSearchResult
 		{
 			SearchProviderName = base.Name,
 			Name = i.Name,
-			ImageUrl = (string.IsNullOrEmpty(i.Profile_Path) ? null : (baseImageUrl + i.Profile_Path))
+			ImageUrl = string.IsNullOrEmpty(i.Profile_Path) ? null : (baseImageUrl + i.Profile_Path)
 		};
-		ProviderIdsExtensions.SetProviderId((IHasProviderIds)val, (MetadataProviders)3, i.Id.ToString(CultureInfo.InvariantCulture));
+		ProviderIdsExtensions.SetProviderId(val, (MetadataProviders)3, i.Id.ToString(CultureInfo.InvariantCulture));
 		return val;
 	}
 
@@ -267,7 +261,7 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	private bool IsComplete(Person item)
 	{
-		if (string.IsNullOrEmpty(((BaseItem)item).Overview))
+		if (string.IsNullOrEmpty(item.Overview))
 		{
 			return false;
 		}
@@ -318,9 +312,9 @@ public class MovieDbPersonProvider : MovieDbProviderBase, IRemoteMetadataProvide
 
 	internal async Task<PersonResult> EnsurePersonInfo(string id, string language, IDirectoryService directoryService, CancellationToken cancellationToken)
 	{
-		string cacheKey = "tmdb_person_" + id + "_" + language;
-		PersonResult personResult = default(PersonResult);
-		if (!directoryService.TryGetFromCache<PersonResult>(cacheKey, out personResult))
+		string cacheKey = $"tmdb_person_{id}_{language}";
+        PersonResult personResult;
+        if (!directoryService.TryGetFromCache<PersonResult>(cacheKey, out personResult))
 		{
 			string dataFilePath = GetPersonDataFilePath((IApplicationPaths)(object)ConfigurationManager.ApplicationPaths, id, language);
 			FileSystemMetadata fileSystemInfo = FileSystem.GetFileSystemInfo(dataFilePath);

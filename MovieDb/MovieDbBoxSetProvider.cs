@@ -75,7 +75,7 @@ public class MovieDbBoxSetProvider : MovieDbProviderBase, IRemoteMetadataProvide
 			RemoteSearchResult result = val.ToRemoteSearchResult(base.Name);
 			List<TmdbImage> images = ((await EnsureInfo(tmdbId, null, cancellationToken).ConfigureAwait(continueOnCapturedContext: false))?.images ?? new TmdbImages()).posters ?? new List<TmdbImage>();
 			string imageUrl = (await GetTmdbSettings(cancellationToken).ConfigureAwait(continueOnCapturedContext: false)).images.GetImageUrl("original");
-			result.ImageUrl = ((images.Count == 0) ? null : (imageUrl + images[0].file_path));
+			result.ImageUrl = (images.Count == 0) ? null : (imageUrl + images[0].file_path);
 			return new RemoteSearchResult[1] { result };
 		}
 		if (tmdbSettings == null)

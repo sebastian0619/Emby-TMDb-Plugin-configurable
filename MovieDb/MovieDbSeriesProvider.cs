@@ -376,8 +376,8 @@ public class MovieDbSeriesProvider : MovieDbProviderBase, IRemoteMetadataProvide
 		}
 		if (string.IsNullOrEmpty(item.Overview))
 		{
-			item.Overview = (string.IsNullOrEmpty(seriesInfo.overview) ? null : WebUtility.HtmlDecode(seriesInfo.overview));
-			item.Overview = ((item.Overview != null) ? item.Overview.Replace("\n\n", "\n") : null);
+			item.Overview = string.IsNullOrEmpty(seriesInfo.overview) ? null : WebUtility.HtmlDecode(seriesInfo.overview);
+			item.Overview = (item.Overview != null) ? item.Overview.Replace("\n\n", "\n") : null;
 		}
 		if (item.RemoteTrailers.Length == 0)
 		{

@@ -15,15 +15,15 @@ public class Plugin : BasePluginSimpleUI<PluginOptions>, IHasThumbImage
 
 	private readonly ILogger _logger;
 
-	private const string ErrorMessage = "TMDB插件出错: ";
+	private const string ErrorMessage = "MovieDb插件出错: ";
 
 	public static Plugin Instance { get; private set; }
 
-	public static string StaticName => "Configurable MovieDb";
+	public static string StaticName => "MovieDb";
 
 	public override string Name => StaticName;
 
-	public override string Description => "MovieDb metadata for movies, configurable for url and api key";
+	public override string Description => "Emby官方MovieDb电影元数据插件改版，支持配置URL和API密钥配置";
 
 	public ImageFormat ThumbImageFormat => ImageFormat.Png;
 
@@ -53,10 +53,10 @@ public class Plugin : BasePluginSimpleUI<PluginOptions>, IHasThumbImage
 		{
 			Configuration = new PluginOptions
 			{
-				TmdbApiBaseUrl = "https://tmdb.kingscross.online:8333",
-				TmdbImageBaseUrl = "https://image.kingscross.online:8333/t/p/",
-				TmdbHomeUrl = "https://tmdb.kingscross.online:8333",
-				ApiKey = "59ef6336a19540cd1e254cae0565906e"
+				TmdbApiBaseUrl = "https://api.themoviedb.org",
+				TmdbImageBaseUrl = "https://image.tmdb.org/t/p/",
+				TmdbHomeUrl = "https://www.themoviedb.org",
+				ApiKey = "f6bd687ffa63cd282b6ff2c6877f2669"
 			};
 		}
 		_logger.Info("TMDB Plugin (" + Name + ") 正在初始化");
@@ -103,9 +103,9 @@ public class Plugin : BasePluginSimpleUI<PluginOptions>, IHasThumbImage
 			{
 				options = new PluginOptions
 				{
-					TmdbApiBaseUrl = "https://tmdb.kingscross.online:8333",
-					TmdbImageBaseUrl = "https://image.kingscross.online:8333/t/p/",
-					ApiKey = "59ef6336a19540cd1e254cae0565906e"
+					TmdbApiBaseUrl = "https://api.themoviedb.org",
+					TmdbImageBaseUrl = "https://image.tmdb.org/t/p/",
+					ApiKey = "f6bd687ffa63cd282b6ff2c6877f2669"
 				};
 			}
 			return base.OnBeforeShowUI(options);

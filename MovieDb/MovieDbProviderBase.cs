@@ -65,8 +65,6 @@ public abstract class MovieDbProviderBase
 		public TmdbVideos videos { get; set; }
 	}
 
-	public const string BaseMovieDbUrl = "https://tmdb.kingscross.online:8333/";
-
 	internal static string AcceptHeader = "application/json,image/*";
 
 	private const string TmdbConfigPath = "3/configuration";
@@ -111,12 +109,21 @@ public abstract class MovieDbProviderBase
 
 	public static string ProviderName => "TheMovieDb";
 
+	protected string BaseMovieDbUrl
+	{
+		get
+		{
+			var config = GetConfiguration();
+			return config.TmdbApiBaseUrl?.TrimEnd('/') ?? "https://api.themoviedb.org/3";
+		}
+	}
+
 	protected string GetApiUrl(string path)
 	{
 		try
 		{
 			PluginOptions config = GetConfiguration();
-			string baseUrl = config.TmdbApiBaseUrl?.TrimEnd(new char[1] { '/' }) ?? "https://tmdb.kingscross.online:8333";
+			string baseUrl = config.TmdbApiBaseUrl?.TrimEnd(new char[1] { '/' }) ?? "https://api.themoviedb.org";
 			string apiKey = config.ApiKey;
 			if (string.IsNullOrEmpty(apiKey))
 			{

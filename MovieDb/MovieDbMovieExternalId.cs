@@ -8,13 +8,22 @@ namespace MovieDb;
 
 public class MovieDbMovieExternalId : IExternalId
 {
-	public const string BaseMovieDbUrl = "https://tmdbhome.kingscross.online:8333/";
-
 	public string Name => Plugin.StaticName;
 
 	public string Key => MetadataProviders.Tmdb.ToString();
 
-	public string UrlFormatString => "https://tmdbhome.kingscross.online:8333/movie/{0}";
+	public string UrlFormatString
+	{
+		get
+		{
+			var config = Plugin.Instance?.Configuration;
+			if (config != null)
+			{
+				return $"{config.TmdbHomeUrl}/movie/{{0}}";
+			}
+			return "https://www.themoviedb.org/movie/{0}";
+		}
+	}
 
 	public bool Supports(IHasProviderIds item)
 	{

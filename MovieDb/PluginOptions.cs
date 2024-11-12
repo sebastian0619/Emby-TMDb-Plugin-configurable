@@ -12,28 +12,28 @@ public class PluginOptions : EditableOptionsBase
 
 	private const string DefaultHomeUrl = "https://www.themoviedb.org";
 
-	private const string DefaultApiKey = "59ef6336a19540cd1e254cae0565906e";
+	private const string DefaultApiKey = "f6bd687ffa63cd282b6ff2c6877f2669";
 
 	public override string EditorTitle => "TMDB 插件配置";
 
 	[DisplayName("TMDB API 基础URL")]
-	[Description("TMDB API 的基础 URL 地址")]
+	[Description("TMDB API 的基础 URL 地址，默认：https://api.themoviedb.org/3")]
 	public string TmdbApiBaseUrl { get; set; } = "https://api.themoviedb.org/3";
 
 
 	[DisplayName("TMDB 图片基础URL")]
-	[Description("TMDB 图片服务的基础 URL 地址")]
+	[Description("TMDB 图片服务的基础 URL 地址，默认：https://image.tmdb.org/t/p")]
 	public string TmdbImageBaseUrl { get; set; } = "https://image.tmdb.org/t/p";
 
 
 	[DisplayName("TMDB 主页URL")]
-	[Description("TMDB 网站的主页地址")]
+	[Description("TMDB 网站的主页地址，默认：https://www.themoviedb.org")]
 	public string TmdbHomeUrl { get; set; } = "https://www.themoviedb.org";
 
 
 	[DisplayName("API Key")]
-	[Description("TMDB API 密钥")]
-	public string ApiKey { get; set; } = "59ef6336a19540cd1e254cae0565906e";
+	[Description("TMDB API 密钥，默认值为EMBY官方插件的原值")]
+	public string ApiKey { get; set; } = "f6bd687ffa63cd282b6ff2c6877f2669";
 
 
 	public string GetImageUrl(string size)
