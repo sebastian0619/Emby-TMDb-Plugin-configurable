@@ -22,8 +22,8 @@ public class PluginOptions : EditableOptionsBase
 
 
 	[DisplayName("TMDB 图片基础URL")]
-	[Description("TMDB 图片服务的基础 URL 地址，默认：https://image.tmdb.org/t/p")]
-	public string TmdbImageBaseUrl { get; set; } = "https://image.tmdb.org/t/p";
+	[Description("TMDB 图片服务的基础 URL 地址，默认：https://image.tmdb.org/t/p/")]
+	public string TmdbImageBaseUrl { get; set; } = "https://image.tmdb.org/t/p/ (确保结尾`/t/p/`均保留)";
 
 
 	[DisplayName("TMDB 主页URL")]
