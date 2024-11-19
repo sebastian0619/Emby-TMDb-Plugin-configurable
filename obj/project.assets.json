@@ -420,9 +420,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
-      "projectName": "MovieDb",
-      "projectPath": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\MovieDb.csproj",
+      "projectUniqueName": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\TheMovieDb.csproj",
+      "projectName": "TheMovieDb",
+      "projectPath": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\TheMovieDb.csproj",
       "packagesPath": "C:\\Users\\Sebas\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Sebas\\Documents\\GitHub\\Emby-TMDb-Plugin-configurable\\obj\\",
       "projectStyle": "PackageReference",

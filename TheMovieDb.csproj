@@ -3,7 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <AssemblyName>MovieDb</AssemblyName>
+    <AssemblyName>TheMovieDb</AssemblyName>
     <ApplicationVersion>1.0.0.0</ApplicationVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
