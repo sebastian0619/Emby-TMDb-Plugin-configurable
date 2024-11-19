@@ -14,23 +14,10 @@
     <None Remove="MovieDb.thumb.png" />
     <EmbeddedResource Include="MovieDb.thumb.png" LogicalName="MovieDb.thumb.png" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="MediaBrowser.Common">
-      <HintPath>.\MediaBrowser.Common.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="MediaBrowser.Controller">
-      <HintPath>.\MediaBrowser.Controller.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="MediaBrowser.Model">
-      <HintPath>.\MediaBrowser.Model.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-    <PackageReference Include="MediaBrowser.Common" Version="4.8.10" />
+    <PackageReference Include="System.Memory" Version="4.6.0" />
+    <PackageReference Include="mediabrowser.server.core" Version="4.8.0.80" />
   </ItemGroup>
 
   <!-- 添加程序集绑定重定向 -->
