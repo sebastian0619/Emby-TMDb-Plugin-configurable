@@ -1,48 +1,23 @@
-C:/Users/Sebas/Documents/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.AssemblyReference.cache
-C:/Users/Sebas/Documents/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.GeneratedMSBuildEditorConfig.editorconfig
-C:/Users/Sebas/Documents/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.CoreCompileInputs.cache
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.AssemblyReference.cache
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.GeneratedMSBuildEditorConfig.editorconfig
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.CoreCompileInputs.cache
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.deps.json
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.dll
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.pdb
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MediaBrowser.Controller.dll
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.Up2Date
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.dll
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.pdb
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.deps.json
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.dll
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MovieDb.pdb
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/bin/Debug/netstandard2.0/MediaBrowser.Controller.dll
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.AssemblyReference.cache
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.GeneratedMSBuildEditorConfig.editorconfig
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.CoreCompileInputs.cache
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.csproj.Up2Date
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.dll
-//KingsCross/home/Onedrive/0.Micellaneous/cross-process/测/MovieDb/obj/Debug/netstandard2.0/MovieDb.pdb
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.csproj.AssemblyReference.cache
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.GeneratedMSBuildEditorConfig.editorconfig
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.csproj.CoreCompileInputs.cache
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.sourcelink.json
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.dll
-/Users/sebastian/SynologyDrive/0.Micellaneous/cross-process/Emby-TMDb-Plugin (configurable)/Emby-TMDb-Plugin-configurable/obj/Debug/netstandard2.0/MovieDb.pdb
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MovieDb.deps.json
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MovieDb.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MovieDb.pdb
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\Emby.Media.Model.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\Emby.Web.GenericEdit.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MediaBrowser.Common.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MediaBrowser.Model.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Buffers.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Memory.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Numerics.Vectors.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MediaBrowser.Controller.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.csproj.AssemblyReference.cache
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.GeneratedMSBuildEditorConfig.editorconfig
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.csproj.CoreCompileInputs.cache
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.sourcelink.json
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.csproj.Up2Date
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.dll
-c:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.pdb
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MovieDb.dll.config
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MovieDb.deps.json
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MovieDb.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MovieDb.pdb
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\Emby.Media.Model.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\Emby.Web.GenericEdit.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MediaBrowser.Common.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MediaBrowser.Model.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\Emby.Naming.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\MediaBrowser.Controller.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Buffers.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Memory.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Numerics.Vectors.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\bin\Debug\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.csproj.AssemblyReference.cache
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.csproj.SuggestedBindingRedirects.cache
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.dll.config
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.csproj.CoreCompileInputs.cache
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.sourcelink.json
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.csproj.Up2Date
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.dll
+C:\Users\Sebas\Documents\GitHub\Emby-TMDb-Plugin-configurable\obj\Debug\netstandard2.0\MovieDb.pdb
