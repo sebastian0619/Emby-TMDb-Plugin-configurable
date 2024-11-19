@@ -46,6 +46,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./bin/Release/netstandard2.0/MovieDb.dll
-        asset_name: MovieDb.dll
+        asset_path: ./bin/Release/netstandard2.0/TheMovieDb.dll
+        asset_name: TheMovieDb.dll
         asset_content_type: application/x-msdownload
